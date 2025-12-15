@@ -1,0 +1,36 @@
+╔═══════════════════════════════════════════════════════════════════╗
+║                                                                   ║
+║         🚀 COMMANDE UNIQUE POUR TOUT FAIRE 🚀                   ║
+║                                                                   ║
+╚═══════════════════════════════════════════════════════════════════╝
+
+Connectez-vous en SSH à votre Freebox et copiez-collez cette SEULE commande :
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+cd /workspace && git pull origin main && sed -i 's/API_PORT=.*/API_PORT=33002/' .env && sed -i 's|API_REDIRECT_URI=.*|API_REDIRECT_URI=http://88.174.155.230:33002/auth/callback|' .env && npm install cors axios && pm2 restart bag-discord-bot && sleep 5 && curl http://localhost:33002/health && echo "" && echo "✅ API démarrée ! Maintenant configurez le port forwarding 33002 sur la Freebox"
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Cette commande va :
+✅ Récupérer le dernier code
+✅ Configurer le port 33002 dans .env
+✅ Installer les dépendances
+✅ Redémarrer le bot
+✅ Tester l'API
+
+Après cette commande :
+1. Ouvrez le firewall : sudo ufw allow 33002
+2. Configurez le port forwarding 33002 sur http://mafreebox.freebox.fr
+
+URL dans l'app : http://88.174.155.230:33002
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+ALTERNATIVE ULTRA SIMPLE :
+
+cd /workspace
+git pull origin main
+./RESTART_BOT_SIMPLE.sh
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
