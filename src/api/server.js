@@ -11,7 +11,7 @@ class BotAPIServer {
   constructor(client) {
     this.client = client;
     this.app = express();
-    this.port = process.env.API_PORT || 3001;
+    this.port = process.env.API_PORT || 33002;
     this.sessions = new Map(); // sessionToken -> { userId, username, expiresAt }
     
     // Configuration OAuth2 Discord
