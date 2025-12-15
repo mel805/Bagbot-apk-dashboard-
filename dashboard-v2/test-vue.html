@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Test Vue</title>
+<script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+<style>
+body{background:#111;color:#fff;padding:20px;font-family:sans-serif}
+.card{background:#222;padding:20px;margin:20px 0;border-radius:8px}
+button{background:#5865F2;color:white;padding:10px 20px;margin:5px;border:none;border-radius:8px;cursor:pointer}
+button.active{background:#57F287;color:#000}
+</style>
+</head>
+<body>
+<div id="app">
+<h1>Test Vue.js - Dashboard</h1>
+<div class="card">
+<p>Vue fonctionne: <strong>{{ vueFonctionne ? 'OUI ✅' : 'NON ❌' }}</strong></p>
+<p>Section active: <strong>{{ v }}</strong></p>
+</div>
+
+<div class="card">
+<button :class="{active:v==='home'}" @click="v='home'">Home</button>
+<button :class="{active:v==='eco'}" @click="v='eco'">Économie</button>
+<button :class="{active:v==='niv'}" @click="v='niv'">Niveaux</button>
+</div>
+
+<div v-show="v==='home'" class="card" style="border:2px solid #5865F2">
+<h2>🏠 Home</h2>
+<p>Cette section devrait être visible UNIQUEMENT quand v==='home'</p>
+</div>
+
+<div v-show="v==='eco'" class="card" style="border:2px solid #57F287">
+<h2>💰 Économie</h2>
+<p>Cette section devrait être visible UNIQUEMENT quand v==='eco'</p>
+</div>
+
+<div v-show="v==='niv'" class="card" style="border:2px solid #FFA500">
+<h2>⭐ Niveaux</h2>
+<p>Cette section devrait être visible UNIQUEMENT quand v==='niv'</p>
+</div>
+
+<div class="card">
+<h3>Debug</h3>
+<pre>v = {{ v }}</pre>
+</div>
+</div>
+
+<script>
+const{createApp}=Vue;
+createApp({
+data(){
+return{
+vueFonctionne:true,
+v:'home'
+}
+}
+}).mount('#app');
+console.log('✅ Vue monté');
+</script>
+</body>
+</html>

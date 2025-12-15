@@ -1,0 +1,88 @@
+bash: warning: setlocale: LC_ALL: cannot change locale (en_US.UTF-8): No such file or directory
+⏰ Attente du reset Discord (06:58 UTC)...
+Heure actuelle: Sun Oct 26 06:51:47 UTC 2025
+
+🔄 Reset effectué, redémarrage du bot...
+[PM2] Applying action restartProcessId on app [bagbot](ids: [ 12 ])
+[PM2] [bagbot](12) ✓
+┌────┬───────────────────────┬─────────────┬─────────┬─────────┬──────────┬────────┬──────┬───────────┬──────────┬──────────┬──────────┬──────────┐
+│ id │ name                  │ namespace   │ version │ mode    │ pid      │ uptime │ ↺    │ status    │ cpu      │ mem      │ user     │ watching │
+├────┼───────────────────────┼─────────────┼─────────┼─────────┼──────────┼────────┼──────┼───────────┼──────────┼──────────┼──────────┼──────────┤
+│ 1  │ auto-restore-watch    │ default     │ 2.0.0   │ fork    │ 226276   │ 47h    │ 0    │ online    │ 0%       │ 60.0mb   │ bagbot   │ disabled │
+│ 12 │ bagbot                │ default     │ 2.0.0   │ fork    │ 430993   │ 0s     │ 4    │ online    │ 0%       │ 28.4mb   │ bagbot   │ disabled │
+│ 11 │ dashboard-v2          │ default     │ 2.0.0   │ fork    │ 377350   │ 9h     │ 3    │ online    │ 0%       │ 67.7mb   │ bagbot   │ disabled │
+└────┴───────────────────────┴─────────────┴─────────┴─────────┴──────────┴────────┴──────┴───────────┴──────────┴──────────┴──────────┴──────────┘
+┌────┬───────────────────────┬─────────────┬─────────┬─────────┬──────────┬────────┬──────┬───────────┬──────────┬──────────┬──────────┬──────────┐
+│ id │ name                  │ namespace   │ version │ mode    │ pid      │ uptime │ ↺    │ status    │ cpu      │ mem      │ user     │ watching │
+├────┼───────────────────────┼─────────────┼─────────┼─────────┼──────────┼────────┼──────┼───────────┼──────────┼──────────┼──────────┼──────────┤
+│ 1  │ auto-restore-watch    │ default     │ 2.0.0   │ fork    │ 226276   │ 47h    │ 0    │ online    │ 0%       │ 60.1mb   │ bagbot   │ disabled │
+│ 12 │ bagbot                │ default     │ 2.0.0   │ fork    │ 430993   │ 5s     │ 4    │ online    │ 0%       │ 73.4mb   │ bagbot   │ disabled │
+│ 11 │ dashboard-v2          │ default     │ 2.0.0   │ fork    │ 377350   │ 9h     │ 3    │ online    │ 0%       │ 67.7mb   │ bagbot   │ disabled │
+└────┴───────────────────────┴─────────────┴─────────┴─────────┴──────────┴────────┴──────┴───────────┴──────────┴──────────┴──────────┴──────────┘
+
+📊 Logs du bot:
+[TAILING] Tailing last 30 lines for [bagbot] process (change the value with --lines option)
+/home/bagbot/.pm2/logs/bagbot-out.log last 30 lines:
+12|bagbot  | [storage] Mode: fichier JSON -> /home/bagbot/Bag-bot/data/config.json
+12|bagbot  | [Backup] Sauvegarde créée pour guild 1360897918504271882: /home/bagbot/Bag-bot/data/backups/guild-1360897918504271882/config-2025-10-23T10-32-48-075Z.json
+12|bagbot  | [storage] Mode: fichier JSON -> /home/bagbot/Bag-bot/data/config.json
+12|bagbot  | [storage] Mode: fichier JSON -> /home/bagbot/Bag-bot/data/config.json
+12|bagbot  | [storage] Mode: fichier JSON -> /home/bagbot/Bag-bot/data/config.json
+12|bagbot  | [storage] Mode: fichier JSON -> /home/bagbot/Bag-bot/data/config.json
+12|bagbot  | [Backup] Sauvegarde créée pour guild 1360897918504271882: /home/bagbot/Bag-bot/data/backups/guild-1360897918504271882/config-2025-10-23T10-32-48-338Z.json
+12|bagbot  | [STORAGE DEBUG] Saved user 343214377937272833 in guild 1360897918504271882: amount=21657, money=21657, charm=3, perversion=4, receivedGrants=0
+12|bagbot  | [ECONOMY DEBUG] Message reward: User 343214377937272833 in guild 1360897918504271882: 21626 + 31 = 21657
+12|bagbot  | [storage] Mode: fichier JSON -> /home/bagbot/Bag-bot/data/config.json
+12|bagbot  | 2025-10-26 07:43:03: [Logo] Fichier logo trouvé: ./bag.png
+12|bagbot  | 2025-10-26 07:43:03: [Tickets] Bannière trouvée: ./bag2.png
+12|bagbot  | 2025-10-26 07:43:03: [CustomMusic] ✅ Système musique initialisé (avec répétition + connexion 24/7)
+12|bagbot  | 2025-10-26 07:43:03: [KeepAlive] listening on 5000
+12|bagbot  | 2025-10-26 07:43:06: [Logo] Fichier logo trouvé: ./bag.png
+12|bagbot  | 2025-10-26 07:43:06: [Tickets] Bannière trouvée: ./bag2.png
+12|bagbot  | 2025-10-26 07:43:06: [CustomMusic] ✅ Système musique initialisé (avec répétition + connexion 24/7)
+12|bagbot  | 2025-10-26 07:43:06: [KeepAlive] listening on 5000
+12|bagbot  | 2025-10-26 07:43:09: [Logo] Fichier logo trouvé: ./bag.png
+12|bagbot  | 2025-10-26 07:43:09: [Tickets] Bannière trouvée: ./bag2.png
+12|bagbot  | 2025-10-26 07:43:09: [CustomMusic] ✅ Système musique initialisé (avec répétition + connexion 24/7)
+12|bagbot  | 2025-10-26 07:43:09: [KeepAlive] listening on 5000
+12|bagbot  | 2025-10-26 07:43:11: [Logo] Fichier logo trouvé: ./bag.png
+12|bagbot  | 2025-10-26 07:43:11: [Tickets] Bannière trouvée: ./bag2.png
+12|bagbot  | 2025-10-26 07:43:12: [CustomMusic] ✅ Système musique initialisé (avec répétition + connexion 24/7)
+12|bagbot  | 2025-10-26 07:43:12: [KeepAlive] listening on 5000
+12|bagbot  | 2025-10-26 07:43:14: [Logo] Fichier logo trouvé: ./bag.png
+12|bagbot  | 2025-10-26 07:43:14: [Tickets] Bannière trouvée: ./bag2.png
+12|bagbot  | 2025-10-26 07:43:15: [CustomMusic] ✅ Système musique initialisé (avec répétition + connexion 24/7)
+12|bagbot  | 2025-10-26 07:43:15: [KeepAlive] listening on 5000
+
+/home/bagbot/.pm2/logs/bagbot-error.log last 30 lines:
+12|bagbot  |     at Module._compile (node:internal/modules/cjs/loader:1364:14)
+12|bagbot  |     at Module._extensions..js (node:internal/modules/cjs/loader:1422:10)
+12|bagbot  |     at Module.load (node:internal/modules/cjs/loader:1203:32)
+12|bagbot  | /home/bagbot/Bag-bot/src/bot.js:3497
+12|bagbot  |   const config = await readConfig();
+12|bagbot  |         ^
+12|bagbot  | 
+12|bagbot  | SyntaxError: Identifier 'config' has already been declared
+12|bagbot  |     at internalCompileFunction (node:internal/vm:76:18)
+12|bagbot  |     at wrapSafe (node:internal/modules/cjs/loader:1283:20)
+12|bagbot  |     at Module._compile (node:internal/modules/cjs/loader:1328:27)
+12|bagbot  |     at Module._extensions..js (node:internal/modules/cjs/loader:1422:10)
+12|bagbot  |     at Module.load (node:internal/modules/cjs/loader:1203:32)
+12|bagbot  |     at Module._load (node:internal/modules/cjs/loader:1019:12)
+12|bagbot  |     at Object.<anonymous> (/usr/lib/node_modules/pm2/lib/ProcessContainerFork.js:33:23)
+12|bagbot  |     at Module._compile (node:internal/modules/cjs/loader:1364:14)
+12|bagbot  |     at Module._extensions..js (node:internal/modules/cjs/loader:1422:10)
+12|bagbot  |     at Module.load (node:internal/modules/cjs/loader:1203:32)
+12|bagbot  | (node:163027) Warning: Supplying "ephemeral" for interaction response options is deprecated. Utilize flags instead.
+12|bagbot  | (Use `node --trace-warnings ...` to show where the warning was created)
+12|bagbot  | [CommandHandler] La commande quarantaine.js n'a pas de propriété 'name'
+12|bagbot  | [Logs] send failed Invalid Form Body
+12|bagbot  | embeds[0].fields[3].value[BASE_TYPE_REQUIRED]: This field is required
+12|bagbot  | (node:163951) Warning: Supplying "ephemeral" for interaction response options is deprecated. Utilize flags instead.
+12|bagbot  | (Use `node --trace-warnings ...` to show where the warning was created)
+12|bagbot  | 2025-10-26 07:43:03: Login failed: Not enough sessions remaining to spawn 1 shards; only 0 remaining; resets at 2025-10-26T06:58:00.524Z
+12|bagbot  | 2025-10-26 07:43:06: Login failed: Not enough sessions remaining to spawn 1 shards; only 0 remaining; resets at 2025-10-26T06:58:00.529Z
+12|bagbot  | 2025-10-26 07:43:09: Login failed: Not enough sessions remaining to spawn 1 shards; only 0 remaining; resets at 2025-10-26T06:58:00.510Z
+12|bagbot  | 2025-10-26 07:43:12: Login failed: Not enough sessions remaining to spawn 1 shards; only 0 remaining; resets at 2025-10-26T06:58:00.515Z
+12|bagbot  | 2025-10-26 07:43:15: Login failed: Not enough sessions remaining to spawn 1 shards; only 0 remaining; resets at 2025-10-26T06:58:00.510Z
+

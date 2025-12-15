@@ -1,0 +1,38 @@
+# Fichiers sensibles
+.env
+*.log
+restart-log.txt
+
+# Node modules
+node_modules/
+npm-debug.log*
+
+# Backups
+*.backup*
+*.old
+*.bak
+src.backup_*/
+public.backup_*/
+data.before-*/
+
+# Keystore (sera regénéré par GitHub Actions)
+android-app/keystore/
+android-app/keystore.properties
+
+# Android build
+android-app/.gradle/
+android-app/.idea/
+android-app/local.properties
+android-app/build/
+android-app/app/build/
+android-app/.cxx/
+android-app/*.iml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Autres
+uno-cards/
+dashboard-v2/gif-cache/
+uploads/

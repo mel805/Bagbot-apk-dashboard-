@@ -1,0 +1,2376 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>BAG Bot Dashboard V2 - Extended</title>
+<script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:sans-serif;background:#111;color:#fff}
+.sidebar{width:240px;height:100vh;position:fixed;background:#1a1a1a;padding:20px;overflow-y:auto;border-right:3px solid #ff0000}
+.main{margin-left:240px;padding:30px}
+.card{background:#222;padding:20px;border-radius:12px;margin-bottom:20px}
+.nav{padding:12px;border-radius:8px;cursor:pointer;margin-bottom:6px}
+.nav.active{background:linear-gradient(90deg,#5865F2,#4752C4)}
+.btn{padding:10px 20px;border-radius:8px;font-weight:600;border:none;cursor:pointer;margin-right:8px}
+.btn-primary{background:#5865F2;color:white}
+.btn-success{background:#57F287;color:#000}
+.btn-danger{background:#ED4245;color:white}
+input,select,textarea{padding:10px;border-radius:6px;border:2px solid #333;background:#0a0a0a;color:white;width:100%}
+table{width:100%;border-collapse:collapse}
+th,td{padding:10px;border-bottom:1px solid #333}
+.tab{padding:10px 20px;border-radius:8px;cursor:pointer;background:#222;display:inline-block;margin:0 8px 8px 0;font-weight:600}
+.tab.active{background:linear-gradient(90deg,#5865F2,#4752C4)}
+.field-group{background:#1a1a1a;padding:15px;border-radius:8px;margin-bottom:15px}
+.field-group h4{margin-bottom:10px;color:#5865F2;font-size:16px}
+
+/* Menu burger */
+.burger{display:none;position:fixed;top:15px;left:15px;z-index:2000;background:#5865F2;border:none;padding:12px 15px;border-radius:8px;cursor:pointer;color:white;font-size:20px}
+.overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);z-index:999}
+
+/* Responsive Mobile */
+@media (max-width: 768px) {
+  .sidebar{transform:translateX(-100%);transition:transform 0.3s ease;z-index:1000;width:240px}
+  .sidebar.open{transform:translateX(0)}
+  .overlay.active{display:block}
+  .burger{display:block}
+  .main{margin-left:0;padding:70px 15px 15px 15px}
+  .card{padding:15px;margin-bottom:15px}
+  h1{font-size:18px !important}
+  h2{font-size:22px !important}
+  h3,h4{font-size:16px !important}
+  .tab{padding:8px 12px;font-size:13px;margin:0 4px 8px 0}
+  .btn{padding:8px 14px;font-size:13px;margin:0 4px 8px 0}
+  input,select,textarea{padding:8px;font-size:14px}
+  .table-wrapper{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  table{min-width:500px;font-size:13px}
+  th,td{padding:8px 6px;font-size:12px}
+  .field-group{padding:10px;margin-bottom:10px}
+  .nav{padding:10px;font-size:14px}
+}
+@media (max-width: 480px) {
+  .main{padding:65px 10px 10px 10px}
+  table{min-width:400px;font-size:11px}
+  th,td{padding:6px 4px;font-size:11px}
+  .tab{padding:6px 10px;font-size:12px}
+  .btn{padding:6px 12px;font-size:12px}
+  h2{font-size:20px !important}
+}
+
+</style>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+<div id="app">
+<button class="burger" @click="toggleMenu" v-if="isMobile"><i class="fas fa-bars"></i></button>
+<div class="overlay" :class="{active:menuOpen}" @click="closeMenu"></div>
+
+<div class="sidebar" :class="{open:menuOpen}">
+<h1 style="font-size:20px;margin-bottom:20px;">🤖 BAG Bot V2</h1>
+<div class="nav" :class="{active:v==='d'}" @click="navigate(\'d\')">🏠 Dashboard</div>
+<div class="nav" :class="{active:v==='eco'}" @click="navigate(\'eco\')">💰 Économie</div>
+<div class="nav" :class="{active:v==='niv'}" @click="navigate(\'niv\')">📈 Niveaux</div>
+<div class="nav" :class="{active:v==='boost'}" @click="navigate(\'boost\')">🚀 Booster</div>
+<div class="nav" :class="{active:v==='count'}" @click="navigate(\'count\')">🔢 Comptage</div>
+<div class="nav" :class="{active:v==='av'}" @click="navigate(\'av\')">🎲 A/V</div>
+<div class="nav" :class="{active:v==='logs'}" @click="navigate(\'logs\')">📝 Logs</div>
+<div class="nav" :class="{active:v==='tick'}" @click="navigate(\'tick\')">🎫 Tickets</div>
+<div class="nav" :class="{active:v==='conf'}" @click="navigate(\'conf\')">💬 Confess</div>
+<div class="nav" :class="{active:v==='welcome'}" @click="navigate(\'welcome\')">👋 Welcome</div>
+<div class="nav" :class="{active:v==='goodbye'}" @click="navigate(\'goodbye\')">👋 Goodbye</div>
+<div class="nav" :class="{active:v==='staff'}" @click="navigate(\'staff\')">👥 Staff</div>
+<div class="nav" :class="{active:v==='autokick'}" @click="navigate(\'autokick\')">👢 AutoKick</div>
+<div class="nav" :class="{active:v==='inactivity'}" @click="navigateInactivity()">⏰ Inactivité</div>
+<div class="nav" :class="{active:v==='autothread'}" @click="navigate(\'autothread\')">🧵 AutoThread</div>
+<div class="nav" :class="{active:v==='disboard'}" @click="navigate(\'disboard\')">📢 Disboard</div>
+<div class="nav" :class="{active:v==='geo'}" @click="navigate(\'geo\')">🌍 Géo</div>
+<div class="nav" :class="{active:v==='actions'}" @click="navigate(\'actions\')">🎬 Actions</div>
+<div class="nav" :class="{active:v==='bak'}" @click="navigate(\'bak\')">💾 Backups</div>
+<div class="nav" :class="{active:v==='ctrl'}" @click="navigate(\'ctrl\')">🎮 Contrôle Bot</div>
+<div class="nav" onclick="window.location.href='/music'" style="cursor:pointer;background:linear-gradient(90deg,#ED4245,#C53030)">🎵 Musique</div>
+</div>
+
+<div class="main">
+
+<!-- Dashboard -->
+<div v-show="v==='d'">
+<h2 style="font-size:28px;margin-bottom:20px;">Dashboard</h2>
+<div class="card">
+<p style="margin-bottom:10px;">Économie: <strong>{{Object.keys(eco).length}}</strong></p>
+<p style="margin-bottom:10px;">Niveaux: <strong>{{Object.keys(niv).length}}</strong></p>
+<p style="margin-bottom:20px;">Prompts: <strong>{{tdS.length+tdN.length}}</strong></p>
+<button @click="load()" class="btn btn-primary">Rafraîchir</button>
+</div>
+</div>
+
+<!-- Économie -->
+<div v-show="v==='eco'">
+<h2 style="font-size:28px;margin-bottom:20px;">💰 Économie ({{Object.keys(eco).length}})</h2>
+<div style="margin-bottom:20px;">
+<span class="tab" :class="{active:ecoT==='u'}" @click="ecoT='u'">Users</span>
+<span class="tab" :class="{active:ecoT==='s'}" @click="ecoT='s'">Settings</span>
+<span class="tab" :class="{active:ecoT==='c'}" @click="ecoT='c'">Cooldowns</span>
+<span class="tab" :class="{active:ecoT==='a'}" @click="ecoT='a'">Actions</span>
+<span class="tab" :class="{active:ecoT==='k'}" @click="ecoT='k'">Karma</span>
+</div>
+<div v-show="ecoT==='u'" class="card">
+<table>
+<thead><tr><th>#</th><th>Pseudo</th><th>Montant</th><th>Charme</th><th>Perv</th></tr></thead>
+<tbody><tr v-for="(item,i) in sortedEcoUsers" :key="item.uid">
+<td>{{i+1}}</td><td style="font-weight:500;">{{getMemberName(item.uid)}}<br><span style="font-family:monospace;font-size:10px;opacity:0.5;">{{item.uid.slice(-8)}}</span></td>
+<td style="font-weight:bold;color:#57F287;">{{(item.data.amount||0).toLocaleString()}} {{curr}}</td>
+<td>🫦 {{item.data.charm||0}}</td><td>😈 {{item.data.perversion||0}}</td>
+</tr></tbody>
+</table>
+<p style="margin-top:15px;opacity:0.7;font-size:13px;">
+Affichage : {{sortedEcoUsers.length}} membres actifs sur {{Object.keys(eco).length}} total
+<span v-if="Object.keys(eco).length - sortedEcoUsers.length > 0" style="color:#ED4245;">
+({{Object.keys(eco).length - sortedEcoUsers.length}} membres inactifs masqués)
+</span>
+</p>
+</div>
+<div v-show="ecoT==='s'" class="card">
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;">
+<div><label>Travail</label><input type="number" v-model.number="ecoW"></div>
+<div><label>Pêche</label><input type="number" v-model.number="ecoF"></div>
+<div><label>Devise</label><input v-model="curr"></div>
+</div>
+<button @click="saveEco()" class="btn btn-success" style="margin-top:15px;">Sauvegarder</button>
+</div>
+<div v-show="ecoT==='c'" class="card">
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;">
+<div v-for="(val,act) in cool" :key="act">
+<label style="font-size:13px;">{{act}}</label>
+<input type="number" v-model.number="cool[act]" style="font-size:13px;">
+</div>
+</div>
+</div>
+<div v-show="ecoT==='a'" class="card">
+<select v-model="selAct" @change="loadAct()" style="margin-bottom:15px;">
+<option :value="null">Sélectionner...</option>
+<option v-for="a in Object.keys(actCfg).sort()" :key="a" :value="a">{{a}}</option>
+</select>
+<div v-if="curAct" style="max-height:600px;overflow-y:auto;">
+<!-- Succès -->
+<div class="field-group">
+<h4>✅ Réussite</h4>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+<div><label>Argent Min</label><input type="number" v-model.number="curAct.moneyMin"></div>
+<div><label>Argent Max</label><input type="number" v-model.number="curAct.moneyMax"></div>
+<div><label>Karma</label><select v-model="curAct.karma"><option value="none">Aucun</option><option value="charm">Charme</option><option value="perversion">Perversion</option></select></div>
+<div><label>Karma Δ</label><input type="number" v-model.number="curAct.karmaDelta"></div>
+<div><label>XP</label><input type="number" v-model.number="curAct.xpDelta"></div>
+<div><label>Taux Succès</label><input type="number" v-model.number="curAct.successRate" step="0.01" min="0" max="1"></div>
+</div>
+</div>
+<!-- Échec -->
+<div class="field-group">
+<h4>❌ Échec</h4>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+<div><label>Argent Min (échec)</label><input type="number" v-model.number="curAct.failMoneyMin"></div>
+<div><label>Argent Max (échec)</label><input type="number" v-model.number="curAct.failMoneyMax"></div>
+<div><label>Karma Δ (échec)</label><input type="number" v-model.number="curAct.failKarmaDelta"></div>
+<div><label>XP (échec)</label><input type="number" v-model.number="curAct.failXpDelta"></div>
+</div>
+</div>
+<!-- Partenaire -->
+<div class="field-group">
+<h4>👥 Partenaire</h4>
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
+<div><label>Part Argent</label><input type="number" v-model.number="curAct.partnerMoneyShare" step="0.01" min="0" max="1"></div>
+<div><label>Part Karma</label><input type="number" v-model.number="curAct.partnerKarmaShare" step="0.01" min="0" max="1"></div>
+<div><label>Part XP</label><input type="number" v-model.number="curAct.partnerXpShare" step="0.01" min="0" max="1"></div>
+</div>
+</div>
+<!-- Autres -->
+<div class="field-group">
+<h4>⚙️ Autres paramètres</h4>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+<div><label>Cooldown (sec)</label><input type="number" v-model.number="curAct.cooldown"></div>
+<div v-if="curAct.zones"><label>Zones</label><input v-model="curAct.zones" readonly></div>
+</div>
+</div>
+</div>
+</div>
+<div v-show="ecoT==='k'" class="card">
+<h3 style="margin-bottom:15px;">Configuration Karma</h3>
+<div class="field-group">
+<h4>🔄 Reset Automatique</h4>
+<label><input type="checkbox" v-model="karmaRes.enabled" style="width:auto;margin-right:10px;">Activer le reset automatique</label>
+<div v-if="karmaRes.enabled" style="margin-top:15px;">
+<label>Jour de reset</label>
+<select v-model.number="karmaRes.day" style="margin-top:5px;">
+<option :value="0">Dimanche</option><option :value="1">Lundi</option><option :value="2">Mardi</option>
+<option :value="3">Mercredi</option><option :value="4">Jeudi</option><option :value="5">Vendredi</option><option :value="6">Samedi</option>
+</select>
+</div>
+</div>
+<div class="field-group" style="margin-top:15px;">
+<h4>📊 Statistiques</h4>
+<p style="margin-bottom:5px;">Utilisateurs avec charme: <strong>{{Object.values(eco).filter(u=>u.charm>0).length}}</strong></p>
+<p>Utilisateurs avec perversion: <strong>{{Object.values(eco).filter(u=>u.perversion>0).length}}</strong></p>
+</div>
+</div>
+</div>
+
+<!-- Niveaux -->
+<div v-show="v==='niv'">
+<h2 style="font-size:28px;margin-bottom:20px;">📈 Niveaux ({{Object.keys(niv).length}})</h2>
+<div style="margin-bottom:20px;">
+<span class="tab" :class="{active:nivT==='u'}" @click="nivT='u'">Users</span>
+<span class="tab" :class="{active:nivT==='xp'}" @click="nivT='xp'">Config XP</span>
+<span class="tab" :class="{active:nivT==='r'}" @click="nivT='r'">Rewards</span>
+<span class="tab" :class="{active:nivT==='an'}" @click="nivT='an'">Annonces</span>
+<span class="tab" :class="{active:nivT==='ca'}" @click="nivT='ca'">Cartes</span>
+</div>
+<div v-show="nivT==='u'" class="card">
+<table>
+<thead><tr><th>#</th><th>Pseudo</th><th>Niveau</th><th>XP</th><th>Messages</th></tr></thead>
+<tbody><tr v-for="(item,i) in sortedNivUsers" :key="item.uid">
+<td>{{i+1}}</td><td style="font-weight:500;">{{getMemberName(item.uid)}}<br><span style="font-family:monospace;font-size:10px;opacity:0.5;">{{item.uid.slice(-8)}}</span></td>
+<td style="font-weight:bold;color:#FEE75C;font-size:20px;">{{item.data.level||0}}</td>
+<td>{{(item.data.xp||0).toLocaleString()}}</td><td>{{item.data.messages||0}}</td>
+</tr></tbody>
+</table>
+<p style="margin-top:15px;opacity:0.7;font-size:13px;">
+Affichage : {{sortedNivUsers.length}} membres actifs sur {{Object.keys(niv).length}} total
+<span v-if="Object.keys(niv).length - sortedNivUsers.length > 0" style="color:#ED4245;">
+({{Object.keys(niv).length - sortedNivUsers.length}} membres inactifs masqués)
+</span>
+</p>
+</div>
+<div v-show="nivT==='xp'" class="card">
+<h3 style="margin-bottom:15px;">Configuration XP</h3>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;">
+<div><label>XP Message Min</label><input type="number" v-model.number="nivXpMsgMin"></div>
+<div><label>XP Message Max</label><input type="number" v-model.number="nivXpMsgMax"></div>
+<div><label>XP Vocal Min</label><input type="number" v-model.number="nivXpVoiceMin"></div>
+<div><label>XP Vocal Max</label><input type="number" v-model.number="nivXpVoiceMax"></div>
+<div><label>Cooldown Message (sec)</label><input type="number" v-model.number="nivCoolMsg"></div>
+<div><label>Cooldown Vocal (sec)</label><input type="number" v-model.number="nivCoolVoice"></div>
+</div>
+</div>
+<div v-show="nivT==='r'" class="card">
+<h3 style="margin-bottom:15px;">Récompenses (Rôles par Niveau)</h3>
+<p style="margin-bottom:15px;">Config rewards : {{Object.keys(nivRewards).length}} niveaux</p>
+<div v-if="Object.keys(nivRewards).length > 0" style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;">
+<div v-for="(roleId,level) in nivRewards" :key="level" style="padding:12px;background:#1a1a1a;border-radius:8px;">
+<div style="font-weight:bold;color:#FEE75C;font-size:16px;margin-bottom:8px;">Niveau {{level}}</div>
+<div style="font-weight:500;font-size:14px;">{{getRoleName(roleId)}}</div>
+<div style="font-family:monospace;font-size:10px;opacity:0.4;margin-top:4px;">{{roleId}}</div>
+</div>
+</div>
+<div v-else style="padding:40px;text-align:center;opacity:0.7;">
+Aucune récompense configurée
+</div>
+</div>
+<div v-show="nivT==='an'" class="card">
+<h3 style="margin-bottom:15px;">Annonces</h3>
+<p>Level Up et Role Award</p>
+</div>
+<div v-show="nivT==='ca'" class="card">
+<h3 style="margin-bottom:15px;">Cartes de Niveau</h3>
+<p>Config backgrounds et styles</p>
+</div>
+</div>
+
+<!-- Booster -->
+<div v-show="v==='boost'">
+<h2 style="font-size:28px;margin-bottom:20px;">🚀 Booster</h2>
+<div class="card">
+<label><input type="checkbox" v-model="boost.enabled" style="width:auto;margin-right:10px;">Activer Système Booster</label>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;margin-top:20px;">
+<div><label>XP Texte (×)</label><input type="number" v-model.number="boost.textXpMult" step="0.1"></div>
+<div><label>XP Vocal (×)</label><input type="number" v-model.number="boost.voiceXpMult" step="0.1"></div>
+<div><label>Cooldown Actions (×)</label><input type="number" v-model.number="boost.actionCooldownMult" step="0.1"></div>
+<div><label>Prix Shop (×)</label><input type="number" v-model.number="boost.shopPriceMult" step="0.1"></div>
+</div>
+<div style="margin-top:20px;">
+<h4 style="margin-bottom:10px;">Rôles Booster ({{boost.roles?.length||0}})</h4>
+<div v-if="boost.roles && boost.roles.length > 0" style="background:#1a1a1a;padding:15px;border-radius:8px;">
+<div v-for="(role,i) in boost.roles" :key="i" style="padding:10px;background:#0a0a0a;margin-bottom:8px;border-radius:6px;">
+<div style="font-weight:500;font-size:14px;">{{i+1}}. {{getRoleName(role)}}</div>
+<div style="font-family:monospace;font-size:10px;opacity:0.4;margin-top:4px;">{{role}}</div>
+</div>
+</div>
+<div v-else style="padding:20px;text-align:center;opacity:0.7;">
+Aucun rôle configuré
+</div>
+</div>
+</div>
+</div>
+
+<!-- Comptage -->
+<div v-show="v==='count'">
+<h2 style="font-size:28px;margin-bottom:20px;">🔢 Comptage</h2>
+<div class="card" style="margin-bottom:15px;">
+<button @click="editingCount=!editingCount" class="btn btn-primary">{{editingCount?'❌ Annuler':'✏️ Mode Édition'}}</button>
+<button v-if="editingCount" @click="saveCount()" class="btn btn-success" style="margin-left:10px;">💾 Sauvegarder</button>
+</div>
+
+<div class="card" style="margin-bottom:15px;">
+<h3 style="margin-bottom:15px;">📋 Channels de Comptage</h3>
+<div v-if="countChannels && countChannels.length>0" style="margin-bottom:15px;">
+<div v-for="(chId,idx) in countChannels" :key="idx" style="padding:10px;background:#1a1a1a;margin-bottom:8px;border-radius:6px;display:flex;justify-content:space-between;align-items:center;">
+<div>
+<div style="font-weight:500;">{{idx+1}}. {{getChannelName(chId)}}</div>
+<div style="font-family:monospace;font-size:10px;opacity:0.4;margin-top:2px;">{{chId}}</div>
+</div>
+<button @click="deleteCountChannel(chId)" class="btn btn-danger" style="padding:6px 12px;font-size:14px;">🗑️</button>
+</div>
+</div>
+<div v-else style="padding:20px;text-align:center;opacity:0.7;background:#1a1a1a;border-radius:6px;">
+Aucun channel configuré
+</div>
+<div style="margin-top:20px;padding-top:20px;border-top:2px solid #333;">
+<h4 style="margin-bottom:10px;">➕ Ajouter un channel</h4>
+<select v-model="newCountChannelId" style="width:100%;margin-bottom:10px;">
+<option value="">-- Sélectionnez un channel --</option>
+<option v-for="(nm,chId) in channels" :key="chId" :value="chId">{{nm}}</option>
+</select>
+<button @click="addCountChannel()" class="btn btn-success">➕ Ajouter</button>
+</div>
+</div>
+
+<div class="card">
+<h3 style="margin-bottom:15px;">⚙️ Configuration</h3>
+<label><input type="checkbox" v-model="countFormulas" :disabled="!editingCount" style="width:auto;margin-right:10px;">Formules Autorisées</label>
+<div style="margin-top:20px;">
+<p style="margin-bottom:10px;">Nombre Actuel: <strong style="font-size:24px;color:#FEE75C;">{{countState.current||0}}</strong></p>
+<p style="margin-bottom:10px;">Dernier User: <strong>{{getMemberName(countState.lastUserId)||'Aucun'}}</strong><br><span style="font-family:monospace;font-size:11px;opacity:0.5;">{{countState.lastUserId?.slice(-10)||''}}</span></p>
+<p style="margin-bottom:10px;">Nombres Atteints: <strong>{{countAch.length}}</strong></p>
+<div style="max-height:200px;overflow-y:auto;background:#1a1a1a;padding:10px;border-radius:8px;">
+{{countAch.join(', ')}}
+</div>
+</div>
+</div>
+</div>
+
+<!-- Action/Vérité -->
+<div v-show="v==='av'">
+<h2 style="font-size:28px;margin-bottom:20px;">🎲 Action/Vérité</h2>
+<div style="margin-bottom:20px;">
+<span class="tab" :class="{active:avT==='config'}" @click="avT='config'">Config AouV</span>
+<span class="tab" :class="{active:avT==='prompt'}" @click="avT='prompt'">Prompts</span>
+</div>
+<div v-show="avT==='config'" class="card">
+<h3 style="margin-bottom:15px;">Channels</h3>
+<div style="margin-bottom:15px;">
+<span class="tab" :class="{active:avMode==='sfw'}" @click="avMode='sfw'">🟢 SFW</span>
+<span class="tab" :class="{active:avMode==='nsfw'}" @click="avMode='nsfw'">🔴 NSFW</span>
+</div>
+<div v-if="avMode==='sfw' && tdSfwCh.length > 0" style="margin-bottom:15px;">
+<div v-for="(channelId,i) in tdSfwCh" :key="i" style="padding:10px;background:#1a1a1a;margin-bottom:8px;border-radius:6px;display:flex;justify-content:space-between;align-items:center;">
+<div>
+<div style="font-weight:500;">{{i+1}}. {{getChannelName(channelId)}}</div>
+<div style="font-family:monospace;font-size:10px;opacity:0.4;margin-top:2px;">{{channelId}}</div>
+</div>
+<button @click="deleteAvChannel('sfw',channelId)" class="btn btn-danger" style="padding:6px 12px;">🗑️</button>
+</div>
+</div>
+<div v-if="avMode==='nsfw' && tdNsfwCh.length > 0" style="margin-bottom:15px;">
+<div v-for="(channelId,i) in tdNsfwCh" :key="i" style="padding:10px;background:#1a1a1a;margin-bottom:8px;border-radius:6px;display:flex;justify-content:space-between;align-items:center;">
+<div>
+<div style="font-weight:500;">{{i+1}}. {{getChannelName(channelId)}}</div>
+<div style="font-family:monospace;font-size:10px;opacity:0.4;margin-top:2px;">{{channelId}}</div>
+</div>
+<button @click="deleteAvChannel('nsfw',channelId)" class="btn btn-danger" style="padding:6px 12px;">🗑️</button>
+</div>
+</div>
+<div v-if="(avMode==='sfw' && tdSfwCh.length === 0) || (avMode==='nsfw' && tdNsfwCh.length === 0)" style="padding:20px;text-align:center;opacity:0.7;">
+Aucun channel configuré
+</div>
+<div style="margin-top:20px;padding-top:20px;border-top:2px solid #333;">
+<h4 style="margin-bottom:10px;">➕ Ajouter un channel</h4>
+<select v-model="newAvChannelId" style="width:100%;margin-bottom:10px;">
+<option value="">-- Sélectionnez un channel --</option>
+<option v-for="(ch,chId) in channels" :key="chId" :value="chId">{{ch}}</option>
+</select>
+<button @click="addAvChannel()" class="btn btn-success">➕ Ajouter</button>
+</div>
+</div>
+<div v-show="avT==='prompt'">
+<div style="margin-bottom:15px;">
+<span class="tab" :class="{active:avMode==='sfw'}" @click="avMode='sfw'">🟢 SFW ({{tdS.length}})</span>
+<span class="tab" :class="{active:avMode==='nsfw'}" @click="avMode='nsfw'">🔴 NSFW ({{tdN.length}})</span>
+</div>
+<div style="margin-bottom:10px;">
+<span class="tab" :class="{active:avType==='v'}" @click="avType='v'">Vérités</span>
+<span class="tab" :class="{active:avType==='a'}" @click="avType='a'">Actions</span>
+</div>
+<div class="card" style="margin-bottom:15px;">
+<h4 style="margin-bottom:10px;">➕ Ajouter des prompts</h4>
+<textarea v-model="newPromptText" placeholder="Un prompt par ligne pour ajouter plusieurs à la fois" style="min-height:100px;margin-bottom:10px;"></textarea>
+<button @click="addAvPrompt()" class="btn btn-success">➕ Ajouter {{avType==='v'?'Vérité(s)':'Action(s)'}} {{avMode==='sfw'?'SFW':'NSFW'}}</button>
+<p style="margin-top:8px;font-size:11px;opacity:0.6;">💡 Un prompt par ligne pour ajouter plusieurs en même temps</p>
+</div>
+<div class="card">
+<h3 style="margin-bottom:15px;">Liste des prompts</h3>
+<div style="max-height:500px;overflow-y:auto;">
+<div v-if="avMode==='sfw'&&avType==='v'">
+<div v-for="(p,i) in tdS.filter(x=>x.type==='verite')" :key="p.id" style="padding:10px;background:#1a1a1a;margin-bottom:8px;border-radius:6px;display:flex;gap:10px;align-items:center;">
+<div style="opacity:0.5;min-width:40px;text-align:right;font-size:12px;">#{{p.id}}</div>
+<div style="flex:1;">
+<textarea v-if="editingPromptId===p.id" v-model="editingPromptText" style="min-height:50px;"></textarea>
+<div v-else>{{p.text}}</div>
+</div>
+<div style="display:flex;gap:4px;">
+<button v-if="editingPromptId===p.id" @click="saveAvPrompt(p)" class="btn btn-success" style="padding:6px 10px;">💾</button>
+<button v-if="editingPromptId===p.id" @click="editingPromptId=null;editingPromptText=''" class="btn" style="padding:6px 10px;background:#666;">❌</button>
+<button v-if="editingPromptId!==p.id" @click="startEditPrompt(p)" class="btn btn-primary" style="padding:6px 10px;">✏️</button>
+<button v-if="editingPromptId!==p.id" @click="deleteAvPrompt(p)" class="btn btn-danger" style="padding:6px 10px;">🗑️</button>
+</div>
+</div>
+</div>
+<div v-if="avMode==='sfw'&&avType==='a'">
+<div v-for="(p,i) in tdS.filter(x=>x.type==='action')" :key="p.id" style="padding:10px;background:#1a1a1a;margin-bottom:8px;border-radius:6px;display:flex;gap:10px;align-items:center;">
+<div style="opacity:0.5;min-width:40px;text-align:right;font-size:12px;">#{{p.id}}</div>
+<div style="flex:1;">
+<textarea v-if="editingPromptId===p.id" v-model="editingPromptText" style="min-height:50px;"></textarea>
+<div v-else>{{p.text}}</div>
+</div>
+<div style="display:flex;gap:4px;">
+<button v-if="editingPromptId===p.id" @click="saveAvPrompt(p)" class="btn btn-success" style="padding:6px 10px;">💾</button>
+<button v-if="editingPromptId===p.id" @click="editingPromptId=null;editingPromptText=''" class="btn" style="padding:6px 10px;background:#666;">❌</button>
+<button v-if="editingPromptId!==p.id" @click="startEditPrompt(p)" class="btn btn-primary" style="padding:6px 10px;">✏️</button>
+<button v-if="editingPromptId!==p.id" @click="deleteAvPrompt(p)" class="btn btn-danger" style="padding:6px 10px;">🗑️</button>
+</div>
+</div>
+</div>
+<div v-if="avMode==='nsfw'&&avType==='v'">
+<div v-for="(p,i) in tdN.filter(x=>x.type==='verite')" :key="p.id" style="padding:10px;background:#1a1a1a;margin-bottom:8px;border-radius:6px;display:flex;gap:10px;align-items:center;">
+<div style="opacity:0.5;min-width:40px;text-align:right;font-size:12px;">#{{p.id}}</div>
+<div style="flex:1;">
+<textarea v-if="editingPromptId===p.id" v-model="editingPromptText" style="min-height:50px;"></textarea>
+<div v-else>{{p.text}}</div>
+</div>
+<div style="display:flex;gap:4px;">
+<button v-if="editingPromptId===p.id" @click="saveAvPrompt(p)" class="btn btn-success" style="padding:6px 10px;">💾</button>
+<button v-if="editingPromptId===p.id" @click="editingPromptId=null;editingPromptText=''" class="btn" style="padding:6px 10px;background:#666;">❌</button>
+<button v-if="editingPromptId!==p.id" @click="startEditPrompt(p)" class="btn btn-primary" style="padding:6px 10px;">✏️</button>
+<button v-if="editingPromptId!==p.id" @click="deleteAvPrompt(p)" class="btn btn-danger" style="padding:6px 10px;">🗑️</button>
+</div>
+</div>
+</div>
+<div v-if="avMode==='nsfw'&&avType==='a'">
+<div v-for="(p,i) in tdN.filter(x=>x.type==='action')" :key="p.id" style="padding:10px;background:#1a1a1a;margin-bottom:8px;border-radius:6px;display:flex;gap:10px;align-items:center;">
+<div style="opacity:0.5;min-width:40px;text-align:right;font-size:12px;">#{{p.id}}</div>
+<div style="flex:1;">
+<textarea v-if="editingPromptId===p.id" v-model="editingPromptText" style="min-height:50px;"></textarea>
+<div v-else>{{p.text}}</div>
+</div>
+<div style="display:flex;gap:4px;">
+<button v-if="editingPromptId===p.id" @click="saveAvPrompt(p)" class="btn btn-success" style="padding:6px 10px;">💾</button>
+<button v-if="editingPromptId===p.id" @click="editingPromptId=null;editingPromptText=''" class="btn" style="padding:6px 10px;background:#666;">❌</button>
+<button v-if="editingPromptId!==p.id" @click="startEditPrompt(p)" class="btn btn-primary" style="padding:6px 10px;">✏️</button>
+<button v-if="editingPromptId!==p.id" @click="deleteAvPrompt(p)" class="btn btn-danger" style="padding:6px 10px;">🗑️</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<!-- Logs -->
+<div v-show="v==='logs'">
+<h2 style="font-size:28px;margin-bottom:20px;">📝 Logs</h2>
+<div class="card" style="margin-bottom:15px;">
+<button @click="editingLogs=!editingLogs" class="btn btn-primary">
+{{editingLogs?'❌ Annuler':'✏️ Mode Édition'}}
+</button>
+<button v-if="editingLogs" @click="saveLogs()" class="btn btn-success" style="margin-left:10px;">💾 Sauvegarder</button>
+</div>
+<div class="card">
+<div class="field-group">
+<label style="display:flex;gap:8px;align-items:center;">
+<input type="checkbox" v-model="logs.enabled" disabled style="width:auto;">
+Système activé ({{logs.enabled?'Oui':'Non'}})
+</label>
+</div>
+<div class="field-group">
+<h4>Catégories et Channels</h4>
+<div style="display:grid;grid-template-columns:1fr;gap:10px;margin-top:10px;">
+<div v-for="(enabled,category) in logs.categories" :key="category" style="padding:12px;background:#1a1a1a;border-radius:8px;">
+<div style="margin-bottom:12px;">
+<div style="font-weight:bold;text-transform:capitalize;margin-bottom:8px;">
+<span :style="{opacity:enabled?1:0.4}">{{enabled?'✅':'❌'}}</span> {{category}}
+</div>
+</div>
+<div v-if="logs.channels && logs.channels[category]" style="margin-bottom:10px;">
+<label style="font-size:12px;opacity:0.8;display:block;margin-bottom:5px;">Channel</label>
+<select v-if="editingLogs" v-model="logs.channels[category]" style="width:100%;">
+<option value="">-- Non configuré --</option>
+<option v-for="(ch,chId) in channels" :key="chId" :value="chId">{{ch.name||chId}}</option>
+</select>
+<div v-else>
+<div style="font-size:13px;font-weight:500;">{{getChannelName(logs.channels[category])}}</div>
+<div style="font-family:monospace;font-size:10px;opacity:0.4;margin-top:2px;">{{logs.channels[category]}}</div>
+</div>
+</div>
+<div v-if="logs.emojis" style="margin-top:10px;">
+<label style="font-size:12px;opacity:0.8;display:block;margin-bottom:5px;">Icône</label>
+<input v-if="editingLogs" v-model="logs.emojis[category]" placeholder="Emoji ou texte" style="width:100%;">
+<div v-else style="font-size:14px;">{{logs.emojis[category]||'📝'}}</div>
+</div>
+<div v-if="logs.actions && logs.actions[category]" style="margin-top:10px;">
+<div style="font-size:12px;opacity:0.7;">Actions: {{logs.actions[category].join(', ')}}</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<!-- Tickets -->
+<div v-show="v==='tick'">
+<h2>🎫 Tickets ({{tickCounter}})</h2>
+<div style="margin:20px 0;">
+<span class="tab" :class="{active:tickT==='config'}" @click="tickT='config'">⚙️ Config</span>
+<span class="tab" :class="{active:tickT==='cats'}" @click="tickT='cats'">📁 Catégories</span>
+<span class="tab" :class="{active:tickT==='hist'}" @click="tickT='hist'">📋 Historique</span>
+<span class="tab" :class="{active:tickT==='panel'}" @click="tickT='panel'">🎨 Panel</span>
+</div>
+
+<div v-show="tickT==='config'" class="card">
+<h3>⚙️ Configuration</h3>
+<div class="field-group">
+<label style="display:flex;gap:8px;align-items:center;">
+<input type="checkbox" v-model="tickEnabled" disabled style="width:auto;">
+Système activé ({{tickEnabled?'Oui':'Non'}})
+</label>
+</div>
+<div class="field-group">
+<label style="display:flex;gap:8px;align-items:center;">
+<input type="checkbox" v-model="editingConfig" style="width:auto;">
+✏️ Mode édition
+</label>
+</div>
+<div class="field-group">
+<h4>Channels</h4>
+<div style="display:grid;grid-template-columns:1fr;gap:12px;margin-top:10px;">
+<div>
+<label style="font-size:13px;opacity:0.8;">📁 Catégorie Discord</label>
+<div style="margin-top:5px;padding:10px;background:#1a1a1a;border-radius:6px;">
+<div style="font-weight:500;">{{getChannelName(tickets.categoryId)}}</div>
+<div style="font-family:monospace;font-size:10px;opacity:0.4;margin-top:2px;">{{tickets.categoryId}}</div>
+</div>
+</div>
+<div>
+<label style="font-size:13px;opacity:0.8;">🎨 Channel du Panel</label>
+<div style="margin-top:5px;padding:10px;background:#1a1a1a;border-radius:6px;">
+<div style="font-weight:500;">{{getChannelName(tickets.panelChannelId)}}</div>
+<div style="font-family:monospace;font-size:10px;opacity:0.4;margin-top:2px;">{{tickets.panelChannelId}}</div>
+</div>
+</div>
+<div>
+<label style="font-size:13px;opacity:0.8;">📋 Channel des Logs</label>
+<div style="margin-top:5px;padding:10px;background:#1a1a1a;border-radius:6px;">
+<div style="font-weight:500;">{{getChannelName(tickets.logChannelId)}}</div>
+<div style="font-family:monospace;font-size:10px;opacity:0.4;margin-top:2px;">{{tickets.logChannelId}}</div>
+</div>
+</div>
+<div>
+<label style="font-size:13px;opacity:0.8;">📄 Channel des Transcripts</label>
+<div style="margin-top:5px;padding:10px;background:#1a1a1a;border-radius:6px;">
+<div style="font-weight:500;">{{getChannelName(tickets.transcriptChannelId)}}</div>
+<div style="font-family:monospace;font-size:10px;opacity:0.4;margin-top:2px;">{{tickets.transcriptChannelId}}</div>
+</div>
+</div>
+</div>
+</div>
+<div v-if="editingConfig" style="margin-top:20px;">
+<button @click="saveConfig" class="btn btn-success">💾 Sauvegarder</button>
+<button @click="editingConfig=false" class="btn" style="background:#666;">❌ Annuler</button>
+</div>
+</div>
+
+<div v-show="tickT==='cats'" class="card">
+<h3>Catégories ({{tickCats.length}})</h3>
+<div v-for="(cat,idx) in tickCats" :key="cat.key" style="background:#1a1a1a;padding:15px;margin:10px 0;border-radius:8px;">
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+<h4 style="margin:0;">{{cat.emoji}} {{cat.label}} <span style="opacity:0.6;font-size:12px;">({{cat.key}})</span></h4>
+<button v-if="editingCat!==idx" @click="editingCat=idx" class="btn btn-primary" style="padding:6px 12px;font-size:12px;">✏️ Modifier</button>
+<div v-else>
+<button @click="saveCat(idx)" class="btn btn-success" style="padding:6px 12px;font-size:12px;margin-right:5px;">💾 Sauvegarder</button>
+<button @click="editingCat=-1" class="btn" style="padding:6px 12px;font-size:12px;background:#666;">❌ Annuler</button>
+</div>
+</div>
+<div style="margin-bottom:10px;">
+<label style="font-size:12px;opacity:0.8;">Label</label>
+<input v-model="cat.label" :readonly="editingCat!==idx" style="margin-top:5px;">
+</div>
+<div style="margin-bottom:10px;">
+<label style="font-size:12px;opacity:0.8;">Emoji</label>
+<input v-model="cat.emoji" :readonly="editingCat!==idx" style="margin-top:5px;">
+</div>
+<div style="margin-bottom:10px;">
+<label style="font-size:12px;opacity:0.8;">Description</label>
+<textarea v-model="cat.description" :readonly="editingCat!==idx" rows="2" style="margin-top:5px;"></textarea>
+</div>
+<div style="margin-top:10px;">
+<div style="font-size:13px;font-weight:bold;margin-bottom:5px;">Staff Roles ({{cat.staffPingRoleIds?.length||0}}):</div>
+<div v-if="cat.staffPingRoleIds && cat.staffPingRoleIds.length > 0" style="margin-bottom:10px;">
+<div v-for="roleId in cat.staffPingRoleIds" :key="roleId" style="padding:4px 8px;background:#0a0a0a;margin:4px 0;border-radius:4px;font-size:12px;">
+{{getRoleName(roleId)}}
+</div>
+</div>
+<div v-else style="font-size:11px;opacity:0.5;margin-bottom:10px;">Aucun</div>
+<div style="font-size:13px;font-weight:bold;margin-bottom:5px;">Viewer Roles ({{cat.extraViewerRoleIds?.length||0}}):</div>
+<div v-if="cat.extraViewerRoleIds && cat.extraViewerRoleIds.length > 0">
+<div v-for="roleId in cat.extraViewerRoleIds" :key="roleId" style="padding:4px 8px;background:#0a0a0a;margin:4px 0;border-radius:4px;font-size:12px;">
+{{getRoleName(roleId)}}
+</div>
+</div>
+<div v-else style="font-size:11px;opacity:0.5;">Aucun</div>
+</div>
+<div v-if="cat.bannerUrl" style="margin-top:8px;">
+<label style="font-size:12px;opacity:0.8;">Banner URL</label>
+<input v-model="cat.bannerUrl" :readonly="editingCat!==idx" style="font-size:11px;margin-top:5px;">
+</div>
+</div>
+</div>
+
+<div v-show="tickT==='hist'" class="card">
+<h3>Historique ({{Object.keys(tickRecords).length}})</h3>
+<p style="opacity:0.8;margin:10px 0;">
+<strong>Ouverts:</strong> {{Object.values(tickRecords).filter(function(t){return!t.closedAt}).length}} | 
+<strong>Fermés:</strong> {{Object.values(tickRecords).filter(function(t){return t.closedAt}).length}}
+</p>
+<div style="max-height:400px;overflow-y:auto;">
+<table style="width:100%;font-size:13px;">
+<thead>
+<tr style="background:#1a1a1a;">
+<th style="padding:8px;">ID</th>
+<th style="padding:8px;">Catégorie</th>
+<th style="padding:8px;">Statut</th>
+</tr>
+</thead>
+<tbody>
+<tr v-for="(rec,id) in tickRecords" :key="id" style="border-bottom:1px solid #2b2b2b;">
+<td style="padding:8px;font-family:monospace;font-size:11px;">{{id.slice(-6)}}</td>
+<td style="padding:8px;">{{rec.categoryKey}}</td>
+<td style="padding:8px;">
+<span v-if="rec.closedAt" style="padding:4px 8px;background:#57F287;color:#000;border-radius:4px;font-size:11px;">Fermé</span>
+<span v-else style="padding:4px 8px;background:#FEE75C;color:#000;border-radius:4px;font-size:11px;">Ouvert</span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+
+<div v-show="tickT==='panel'" class="card">
+<h3>🎨 Panel Ticket</h3>
+<div class="field-group">
+<label>Titre</label>
+<input v-model="tickPanel.title" placeholder="Titre du panel">
+</div>
+<div class="field-group">
+<label>Texte</label>
+<textarea v-model="tickPanel.text" rows="4" placeholder="Message du panel"></textarea>
+</div>
+<div class="field-group">
+<label>Couleur (hex)</label>
+<input v-model="tickPanel.color" placeholder="#5865F2">
+</div>
+<div class="field-group">
+<label>URL de l'image</label>
+<div style="display:flex;gap:10px;">
+<input v-model="tickPanel.imageUrl" placeholder="https://..." style="flex:1;">
+<input type="file" @change="uploadImage($event,'imageUrl')" accept="image/*" style="width:auto;background:#5865F2;color:white;cursor:pointer;padding:8px;">
+</div>
+</div>
+<div class="field-group">
+<label>URL de la miniature</label>
+<div style="display:flex;gap:10px;">
+<input v-model="tickPanel.thumbnailUrl" placeholder="https://..." style="flex:1;">
+<input type="file" @change="uploadImage($event,'thumbnailUrl')" accept="image/*" style="width:auto;background:#5865F2;color:white;cursor:pointer;padding:8px;">
+</div>
+</div>
+<div class="field-group">
+<label>Footer (texte en bas)</label>
+<input v-model="tickPanel.footer" placeholder="Texte du footer">
+</div>
+<div class="field-group">
+<label>Timestamp</label>
+<label style="display:flex;gap:8px;align-items:center;margin-top:5px;">
+<input type="checkbox" v-model="tickPanel.timestamp" style="width:auto;">
+Afficher le timestamp
+</label>
+</div>
+<div style="margin-top:20px;">
+<button @click="savePanel" class="btn btn-success">💾 Sauvegarder le Panel</button>
+</div>
+</div>
+
+</div>
+
+<!-- Confessions -->
+<div v-show="v==='conf'">
+<h2 style="font-size:28px;margin-bottom:20px;">💬 Confessions</h2>
+<div class="card" style="margin-bottom:15px;">
+<button @click="editingConfess=!editingConfess" class="btn btn-primary">
+{{editingConfess?'❌ Annuler':'✏️ Mode Édition'}}
+</button>
+<button v-if="editingConfess" @click="saveConfess()" class="btn btn-success" style="margin-left:10px;">💾 Sauvegarder</button>
+</div>
+
+<div style="margin-bottom:20px;">
+<span class="tab" :class="{active:confMode==='sfw'}" @click="confMode='sfw'">🟢 SFW</span>
+<span class="tab" :class="{active:confMode==='nsfw'}" @click="confMode='nsfw'">🔴 NSFW</span>
+</div>
+
+<div class="card">
+<h3 style="margin-bottom:15px;">Configuration {{confMode.toUpperCase()}}</h3>
+<div class="field-group" v-if="confess[confMode]">
+<h4>Channels ({{confess[confMode]?.channels?.length||0}})</h4>
+<div v-if="editingConfess" style="margin-bottom:15px;">
+<label style="font-size:14px;font-weight:500;margin-bottom:8px;display:block;">Ajouter un channel</label>
+<div style="display:flex;gap:10px;">
+<select v-model="newConfessChannel" style="flex:1;">
+<option value="">-- Sélectionner un channel --</option>
+<option v-for="(ch,chId) in channels" :key="chId" :value="chId" v-if="!confess[confMode].channels.includes(chId)">{{ch.name||chId}}</option>
+</select>
+<button @click="addConfessChannel()" :disabled="!newConfessChannel" class="btn btn-success">Ajouter</button>
+</div>
+</div>
+<div v-if="confess[confMode]?.channels && confess[confMode].channels.length > 0" style="margin-top:10px;">
+<div v-for="(channelId,i) in confess[confMode].channels" :key="i" style="padding:10px;background:#1a1a1a;margin-bottom:6px;border-radius:6px;display:flex;justify-content:space-between;align-items:center;">
+<div>
+<div style="font-weight:500;">{{i+1}}. {{getChannelName(channelId)}}</div>
+<div style="font-family:monospace;font-size:10px;opacity:0.4;margin-top:2px;">{{channelId}}</div>
+</div>
+<button v-if="editingConfess" @click="removeConfessChannel(i)" class="btn btn-danger" style="padding:6px 12px;">Supprimer</button>
+</div>
+</div>
+<div v-else style="padding:20px;text-align:center;opacity:0.7;">
+Aucun channel configuré pour {{confMode.toUpperCase()}}
+</div>
+</div>
+</div>
+
+<div class="card">
+<h3 style="margin-bottom:15px;">Configuration Générale</h3>
+<div class="field-group">
+<h4>Channel des Logs</h4>
+<select v-if="editingConfess" v-model="confess.logChannelId" style="width:100%;">
+<option value="">-- Non configuré --</option>
+<option v-for="(ch,chId) in channels" :key="chId" :value="chId">{{ch.name||chId}}</option>
+</select>
+<div v-else style="padding:10px;background:#1a1a1a;border-radius:6px;">
+<div style="font-weight:500;">{{getChannelName(confess.logChannelId)}}</div>
+<div style="font-family:monospace;font-size:10px;opacity:0.4;margin-top:2px;">{{confess.logChannelId}}</div>
+</div>
+</div>
+<div class="field-group">
+<h4>Paramètres</h4>
+<label style="display:flex;gap:8px;align-items:center;margin-bottom:15px;">
+<input type="checkbox" v-model="confess.allowReplies" :disabled="!editingConfess" style="width:auto;">
+Réponses autorisées
+</label>
+<div style="margin-bottom:15px;">
+<label style="font-size:13px;display:block;margin-bottom:5px;">Nommage des threads</label>
+<select v-if="editingConfess" v-model="confess.threadNaming" style="width:100%;">
+<option value="sfw">SFW (noms normaux)</option>
+<option value="nsfw">NSFW (noms sensuels)</option>
+<option value="counter">Numéro (#confession-1, #confession-2...)</option>
+</select>
+<input v-else :value="confess.threadNaming" readonly style="background:#1a1a1a;">
+</div>
+<p style="margin-top:10px;">Confessions totales: <strong style="font-size:18px;color:#FEE75C;">{{confess.counter||0}}</strong></p>
+</div>
+</div>
+
+<div class="card" v-if="confess.threadNaming === 'nsfw'">
+<h3 style="margin-bottom:15px;">Noms NSFW ({{confess.nsfwNames?.length||0}})</h3>
+<div v-if="editingConfess" style="margin-bottom:15px;">
+<label style="font-size:14px;font-weight:500;margin-bottom:8px;display:block;">Ajouter un nom</label>
+<div style="display:flex;gap:10px;">
+<input v-model="newNsfwName" placeholder="Ex: Velours, Mystique..." style="flex:1;">
+<button @click="addNsfwName()" :disabled="!newNsfwName" class="btn btn-success">Ajouter</button>
+</div>
+</div>
+<div v-if="confess.nsfwNames && confess.nsfwNames.length > 0" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px;">
+<div v-for="(name,i) in confess.nsfwNames" :key="i" style="padding:8px;background:#1a1a1a;border-radius:6px;display:flex;justify-content:space-between;align-items:center;">
+<span style="font-weight:500;">{{name}}</span>
+<button v-if="editingConfess" @click="removeNsfwName(i)" class="btn btn-danger" style="padding:4px 8px;font-size:11px;">×</button>
+</div>
+</div>
+<div v-else style="padding:20px;text-align:center;opacity:0.7;">
+Aucun nom NSFW configuré
+</div>
+</div>
+</div>
+
+<!-- Welcome -->
+<div v-show="v==='welcome'">
+<h2 style="font-size:28px;margin-bottom:20px;">👋 Welcome</h2>
+<div class="card" style="margin-bottom:15px;">
+<button @click="editingWelcome=!editingWelcome" class="btn btn-primary">{{editingWelcome?'❌ Annuler':'✏️ Mode Édition'}}</button>
+<button v-if="editingWelcome" @click="saveWelcome()" class="btn btn-success" style="margin-left:10px;">💾 Sauvegarder</button>
+</div>
+<div class="card">
+<div class="field-group">
+<label style="display:flex;gap:8px;align-items:center;">
+<input type="checkbox" v-model="welcome.enabled" :disabled="!editingWelcome" style="width:auto;">
+Système activé ({{welcome.enabled?'Oui':'Non'}})
+</label>
+</div>
+<div class="field-group">
+<h4>Channel</h4>
+<select v-if="editingWelcome" v-model="welcome.channelId" style="width:100%;">
+<option value="">-- Sélectionnez un channel --</option>
+<option v-for="(ch,chId) in channels" :key="chId" :value="chId">{{ch}}</option>
+</select>
+<div v-else style="padding:10px;background:#1a1a1a;border-radius:6px;">
+<div style="font-weight:500;">{{getChannelName(welcome.channelId)}}</div>
+<div style="font-family:monospace;font-size:10px;opacity:0.4;margin-top:2px;">{{welcome.channelId}}</div>
+</div>
+</div>
+<div class="field-group">
+<h4>Message</h4>
+<textarea v-model="welcome.message" :readonly="!editingWelcome" rows="4" :style="editingWelcome?'':'background:#1a1a1a;'"></textarea>
+</div>
+<div class="field-group">
+<label style="display:flex;gap:8px;align-items:center;">
+<input type="checkbox" v-model="welcome.embedEnabled" :disabled="!editingWelcome" style="width:auto;">
+Embed activé
+</label>
+</div>
+<div v-if="welcome.embedEnabled" class="field-group">
+<h4>Configuration Embed</h4>
+<div style="margin-bottom:10px;">
+<label style="font-size:12px;">Titre</label>
+<input v-model="welcome.embedTitle" :readonly="!editingWelcome" style="margin-top:5px;" :style="editingWelcome?'':'background:#1a1a1a;'">
+</div>
+<div style="margin-bottom:10px;">
+<label style="font-size:12px;">Description</label>
+<textarea v-model="welcome.embedDescription" :readonly="!editingWelcome" rows="3" style="margin-top:5px;" :style="editingWelcome?'':'background:#1a1a1a;'"></textarea>
+</div>
+<div style="margin-bottom:10px;">
+<label style="font-size:12px;">Couleur</label>
+<input v-model="welcome.embedColor" :readonly="!editingWelcome" style="margin-top:5px;" :style="editingWelcome?'':'background:#1a1a1a;'">
+</div>
+<div style="margin-bottom:10px;">
+<label style="font-size:12px;">Footer</label>
+<input v-model="welcome.embedFooter" :readonly="!editingWelcome" style="margin-top:5px;" :style="editingWelcome?'':'background:#1a1a1a;'">
+</div>
+<div style="margin-bottom:10px;">
+<label style="display:flex;gap:8px;align-items:center;">
+<input type="checkbox" v-model="welcome.sendEmbedInDM" :disabled="!editingWelcome" style="width:auto;">
+Envoyer l'embed en DM
+</label>
+</div>
+</div>
+</div>
+</div>
+
+<!-- Goodbye -->
+<div v-show="v==='goodbye'">
+<h2 style="font-size:28px;margin-bottom:20px;">👋 Goodbye</h2>
+<div class="card" style="margin-bottom:15px;">
+<button @click="editingGoodbye=!editingGoodbye" class="btn btn-primary">{{editingGoodbye?'❌ Annuler':'✏️ Mode Édition'}}</button>
+<button v-if="editingGoodbye" @click="saveGoodbye()" class="btn btn-success" style="margin-left:10px;">💾 Sauvegarder</button>
+</div>
+<div class="card">
+<div class="field-group">
+<label style="display:flex;gap:8px;align-items:center;">
+<input type="checkbox" v-model="goodbye.enabled" :disabled="!editingGoodbye" style="width:auto;">
+Système activé ({{goodbye.enabled?'Oui':'Non'}})
+</label>
+</div>
+<div class="field-group">
+<h4>Channel</h4>
+<select v-if="editingGoodbye" v-model="goodbye.channelId" style="width:100%;">
+<option value="">-- Sélectionnez un channel --</option>
+<option v-for="(ch,chId) in channels" :key="chId" :value="chId">{{ch}}</option>
+</select>
+<div v-else style="padding:10px;background:#1a1a1a;border-radius:6px;">
+<div style="font-weight:500;">{{getChannelName(goodbye.channelId)}}</div>
+<div style="font-family:monospace;font-size:10px;opacity:0.4;margin-top:2px;">{{goodbye.channelId}}</div>
+</div>
+</div>
+<div class="field-group">
+<h4>Message</h4>
+<textarea v-model="goodbye.message" readonly rows="2" style="background:#1a1a1a;"></textarea>
+</div>
+<div class="field-group">
+<label style="display:flex;gap:8px;align-items:center;">
+<input type="checkbox" v-model="goodbye.embedEnabled" disabled style="width:auto;">
+Embed activé
+</label>
+</div>
+<div v-if="goodbye.embedEnabled" class="field-group">
+<h4>Configuration Embed</h4>
+<div style="margin-bottom:10px;">
+<label style="font-size:12px;">Titre</label>
+<input v-model="goodbye.embedTitle" readonly style="margin-top:5px;background:#1a1a1a;">
+</div>
+<div style="margin-bottom:10px;">
+<label style="font-size:12px;">Description</label>
+<textarea v-model="goodbye.embedDescription" readonly rows="2" style="margin-top:5px;background:#1a1a1a;"></textarea>
+</div>
+<div style="margin-bottom:10px;">
+<label style="font-size:12px;">Couleur</label>
+<input v-model="goodbye.embedColor" readonly style="margin-top:5px;background:#1a1a1a;">
+</div>
+<div style="margin-bottom:10px;">
+<label style="font-size:12px;">Footer</label>
+<input v-model="goodbye.embedFooter" readonly style="margin-top:5px;background:#1a1a1a;">
+</div>
+</div>
+</div>
+</div>
+
+<!-- Staff -->
+<div v-show="v==='staff'">
+<h2 style="font-size:28px;margin-bottom:20px;">👥 Staff</h2>
+<div class="card">
+<h3 style="margin-bottom:15px;">Rôles Staff ({{staffRoles.length}})</h3>
+<div style="margin-bottom:20px;">
+<label style="font-size:14px;font-weight:500;margin-bottom:8px;display:block;">Ajouter un rôle</label>
+<div style="display:flex;gap:10px;">
+<select v-model="newStaffRole" style="flex:1;">
+<option value="">-- Sélectionner un rôle --</option>
+<option v-for="(role,roleId) in roles" :key="roleId" :value="roleId" v-if="!staffRoles.includes(roleId)">{{role||roleId}}</option>
+</select>
+<button @click="addStaffRole()" :disabled="!newStaffRole" class="btn btn-success">Ajouter</button>
+</div>
+</div>
+<div v-if="staffRoles.length > 0" style="background:#1a1a1a;padding:15px;border-radius:8px;">
+<div v-for="(roleId,i) in staffRoles" :key="i" style="padding:12px;background:#0a0a0a;margin-bottom:8px;border-radius:6px;display:flex;justify-content:space-between;align-items:center;">
+<div>
+<div style="font-weight:bold;color:#5865F2;font-size:14px;">{{i+1}}. {{getRoleName(roleId)}}</div>
+<div style="font-family:monospace;font-size:10px;opacity:0.5;margin-top:5px;">{{roleId}}</div>
+</div>
+<button @click="removeStaffRole(i)" class="btn btn-danger" style="padding:6px 12px;">Supprimer</button>
+</div>
+</div>
+<div v-else style="padding:20px;text-align:center;opacity:0.7;">
+Aucun rôle staff configuré
+</div>
+</div>
+</div>
+
+<!-- AutoKick -->
+<div v-show="v==='autokick'">
+<h2 style="font-size:28px;margin-bottom:20px;">👢 AutoKick</h2>
+<div class="card" style="margin-bottom:15px;">
+<button @click="editingAutokick=!editingAutokick" class="btn btn-primary">
+{{editingAutokick?'❌ Annuler':'✏️ Mode Édition'}}
+</button>
+<button v-if="editingAutokick" @click="saveAutokick()" class="btn btn-success" style="margin-left:10px;">💾 Sauvegarder</button>
+<button @click="cleanExpiredAutokick()" class="btn btn-danger" style="margin-left:10px;">🗑️ Nettoyer les expirés ({{expiredAutokickCount}})</button>
+</div>
+<div class="card">
+<h3 style="margin-bottom:15px;">Configuration</h3>
+<div class="field-group">
+<label style="display:flex;gap:8px;align-items:center;">
+<input type="checkbox" v-model="autokick.enabled" :disabled="!editingAutokick" style="width:auto;">
+Système activé
+</label>
+</div>
+<div class="field-group">
+<label>Rôle à vérifier</label>
+<select v-if="editingAutokick" v-model="autokick.roleId" style="margin-top:5px;">
+<option value="">-- Sélectionner un rôle --</option>
+<option v-for="(role,roleId) in roles" :key="roleId" :value="roleId">{{role||roleId}}</option>
+</select>
+<div v-else>
+<input :value="getRoleName(autokick.roleId)" readonly style="margin-top:5px;background:#1a1a1a;">
+<div style="font-family:monospace;font-size:10px;opacity:0.4;margin-top:5px;">{{autokick.roleId}}</div>
+</div>
+</div>
+<div class="field-group">
+<label>Délai avant kick (en heures)</label>
+<input v-if="editingAutokick" type="number" v-model.number="autokickDelayHours" min="1" max="720" style="margin-top:5px;">
+<input v-else :value="formatDelay(autokick.delayMs)" readonly style="margin-top:5px;background:#1a1a1a;">
+</div>
+<div class="field-group">
+<h4 style="margin-bottom:10px;">Membres en attente ({{Object.keys(filteredPendingJoiners).length}})</h4>
+<p style="margin-bottom:10px;color:#FEE75C;font-weight:500;">
+⚠️ Membres avec délai expiré: <strong style="font-size:16px;">{{expiredAutokickCount}}</strong>
+<span v-if="expiredAutokickCount > 0" style="color:#ED4245;margin-left:10px;">
+(Devraient être kickés automatiquement)
+</span>
+</p>
+<div v-if="Object.keys(filteredPendingJoiners).length > 0" style="max-height:300px;overflow-y:auto;">
+<div v-for="(timestamp,userId) in filteredPendingJoiners" :key="userId" :style="{padding:'10px',background:'#1a1a1a',marginBottom:'6px',borderRadius:'6px',borderLeft:isExpired(timestamp)?'4px solid #ED4245':'none'}">
+<div style="display:flex;justify-content:space-between;align-items:start;">
+<div>
+<div style="font-weight:500;">{{getMemberName(userId)}}</div>
+<div style="font-family:monospace;font-size:10px;opacity:0.5;margin-top:2px;">{{userId}}</div>
+<div style="font-size:11px;opacity:0.7;margin-top:4px;">
+Depuis: {{new Date(timestamp).toLocaleString('fr-FR')}}
+<span v-if="isExpired(timestamp)" style="color:#ED4245;font-weight:bold;margin-left:8px;">
+(Expiré {{formatTimeAgo(timestamp)}})
+</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div v-else style="padding:20px;text-align:center;opacity:0.7;">
+Aucun membre en attente
+</div>
+</div>
+</div>
+</div>
+
+<!-- Inactivity -->
+<div v-show="v==='inactivity'">
+<h2 style="font-size:28px;margin-bottom:20px;">⏰ Kick Inactivité</h2>
+<div class="card" style="margin-bottom:15px;">
+<button @click="editingInactivity=!editingInactivity" class="btn btn-primary">
+{{editingInactivity?'❌ Annuler':'✏️ Mode Édition'}}
+</button>
+<button v-if="editingInactivity" @click="saveInactivity()" class="btn btn-success" style="margin-left:10px;">💾 Sauvegarder</button>
+</div>
+<div class="card">
+<h3 style="margin-bottom:15px;">Configuration</h3>
+<div class="field-group">
+<label style="display:flex;align-items:center;gap:8px;">
+<strong>Activer le kick automatique pour inactivité</strong>
+<input type="checkbox" v-model="inactivity.enabled" :disabled="!editingInactivity" style="width:auto;">
+</label>
+</div>
+<div class="field-group">
+<label>Délai d'inactivité avant kick</label>
+<select v-if="editingInactivity" v-model="inactivityDelayMode" @change="updateDelayFromMode" style="margin-top:5px;">
+<option value="0.0007">1 minute (test)</option>
+<option value="1">1 jour</option>
+<option value="7">1 semaine</option>
+<option value="30">1 mois</option>
+<option value="60">2 mois</option>
+<option value="90">3 mois</option>
+<option value="999999">Toujours (jamais kick)</option>
+<option value="custom">Personnalisé</option>
+</select>
+<input v-else :value="getDelayLabel(inactivity.delayDays)" readonly style="margin-top:5px;background:#1a1a1a;">
+<div v-if="editingInactivity && inactivityDelayMode==='custom'" style="margin-top:10px;">
+<label style="font-size:13px;">Nombre de jours personnalisé :</label>
+<input type="number" v-model.number="inactivityCustomDays" min="1" max="365" style="margin-top:5px;">
+</div>
+<p style="margin-top:5px;font-size:12px;opacity:0.7;">Les membres inactifs pendant cette durée seront automatiquement expulsés</p>
+</div>
+<div class="field-group">
+<label>Rôle "Inactif" (donné automatiquement via /inactif)</label>
+<select v-if="editingInactivity" v-model="inactivity.inactiveRoleId" style="margin-top:5px;">
+<option :value="null">Aucun (créez un rôle "Inactif")</option>
+<option v-for="(role,roleId) in roles" :key="roleId" :value="roleId">{{role||roleId}}</option>
+</select>
+<input v-else :value="getRoleName(inactivity.inactiveRoleId)" readonly style="margin-top:5px;background:#1a1a1a;">
+<p style="margin-top:5px;font-size:12px;opacity:0.7;">Ce rôle sera automatiquement donné aux membres qui utilisent /inactif declarer</p>
+</div>
+<div class="field-group">
+<label>Rôles exempts du kick (ne seront jamais kickés)</label>
+<select v-if="editingInactivity" v-model="inactivity.excludedRoleIds" multiple style="margin-top:5px;height:120px;">
+<option v-for="(role,roleId) in roles" :key="roleId" :value="roleId">{{role||roleId}}</option>
+</select>
+<div v-else style="margin-top:5px;">
+<div v-if="!inactivity.excludedRoleIds||inactivity.excludedRoleIds.length===0" style="padding:8px;background:#1a1a1a;border-radius:4px;opacity:0.7;">
+Aucun rôle exempt
+</div>
+<div v-else v-for="roleId in inactivity.excludedRoleIds" :key="roleId" style="padding:8px;background:#1a1a1a;margin-bottom:5px;border-radius:4px;">
+{{getRoleName(roleId)}}
+</div>
+</div>
+<p style="margin-top:5px;font-size:12px;opacity:0.7;">Le rôle "Inactif" est automatiquement exempt s'il est configuré</p>
+</div>
+</div>
+</div>
+
+<!-- AutoThread -->
+<div v-show="v==='autothread'">
+<h2 style="font-size:28px;margin-bottom:20px;">🧵 AutoThread</h2>
+<div class="card" style="margin-bottom:15px;">
+<button @click="editingAutothread=!editingAutothread" class="btn btn-primary">
+{{editingAutothread?'❌ Annuler':'✏️ Mode Édition'}}
+</button>
+<button v-if="editingAutothread" @click="saveAutothread()" class="btn btn-success" style="margin-left:10px;">💾 Sauvegarder</button>
+</div>
+<div class="card">
+<h3 style="margin-bottom:15px;">Configuration</h3>
+<div class="field-group">
+<h4>Channels surveillés ({{autothread.channels?.length||0}})</h4>
+<div v-if="editingAutothread" style="margin-bottom:15px;">
+<label style="font-size:14px;font-weight:500;margin-bottom:8px;display:block;">Ajouter un channel</label>
+<div style="display:flex;gap:10px;">
+<select v-model="newAutothreadChannel" style="flex:1;">
+<option value="">-- Sélectionner un channel --</option>
+<option v-for="(ch,chId) in channels" :key="chId" :value="chId" v-if="!autothread.channels.includes(chId)">{{ch.name||chId}}</option>
+</select>
+<button @click="addAutothreadChannel()" :disabled="!newAutothreadChannel" class="btn btn-success">Ajouter</button>
+</div>
+</div>
+<div v-if="autothread.channels && autothread.channels.length > 0" style="background:#1a1a1a;padding:15px;border-radius:8px;margin-top:10px;">
+<div v-for="(channelId,i) in autothread.channels" :key="i" style="padding:10px;background:#0a0a0a;margin-bottom:6px;border-radius:6px;display:flex;justify-content:space-between;align-items:center;">
+<div>
+<div style="font-weight:bold;">{{i+1}}. {{getChannelName(channelId)}}</div>
+<div style="font-family:monospace;font-size:11px;opacity:0.6;margin-top:4px;">{{channelId}}</div>
+</div>
+<button v-if="editingAutothread" @click="removeAutothreadChannel(i)" class="btn btn-danger" style="padding:6px 12px;">Supprimer</button>
+</div>
+</div>
+<div v-else style="padding:20px;text-align:center;opacity:0.7;">
+Aucun channel configuré
+</div>
+</div>
+<div class="field-group">
+<h4>Nommage</h4>
+<label style="font-size:13px;display:block;margin-bottom:5px;">Mode de nommage</label>
+<select v-if="editingAutothread" v-model="autothread.naming.mode" style="width:100%;margin-bottom:10px;">
+<option value="default">Défaut (nom du message)</option>
+<option value="nsfw">NSFW (noms sensuels)</option>
+<option value="counter">Compteur (#thread-1, #thread-2...)</option>
+<option value="custom">Personnalisé</option>
+</select>
+<input v-else :value="autothread.naming?.mode||'default'" readonly style="background:#1a1a1a;margin-bottom:10px;">
+<div v-if="autothread.naming?.mode==='custom' && editingAutothread">
+<label style="font-size:13px;display:block;margin-bottom:5px;">Pattern personnalisé</label>
+<input v-model="autothread.naming.customPattern" placeholder="{counter} - {author}" style="width:100%;">
+</div>
+<p v-if="autothread.naming?.customPattern && !editingAutothread" style="margin-top:5px;">Pattern: <code style="background:#0a0a0a;padding:4px 8px;border-radius:4px;">{{autothread.naming.customPattern}}</code></p>
+</div>
+<div class="field-group">
+<h4>Archive</h4>
+<label style="font-size:13px;display:block;margin-bottom:5px;">Politique d'archivage</label>
+<select v-if="editingAutothread" v-model="autothread.archive.policy" style="width:100%;">
+<option value="max">Maximum (1 semaine)</option>
+<option value="day">1 jour</option>
+<option value="three_days">3 jours</option>
+<option value="week">1 semaine</option>
+</select>
+<input v-else :value="autothread.archive?.policy||'default'" readonly style="background:#1a1a1a;">
+</div>
+<div class="field-group">
+<h4>Compteur</h4>
+<p>Threads créés: <strong style="font-size:20px;color:#FEE75C;">{{autothread.counter||0}}</strong></p>
+</div>
+</div>
+</div>
+
+<!-- Disboard -->
+<div v-show="v==='disboard'">
+<h2 style="font-size:28px;margin-bottom:20px;">📢 Disboard</h2>
+<div class="card" style="margin-bottom:15px;">
+<button @click="editingDisboard=!editingDisboard" class="btn btn-primary">
+{{editingDisboard?'❌ Annuler':'✏️ Mode Édition'}}
+</button>
+<button v-if="editingDisboard" @click="saveDisboard()" class="btn btn-success" style="margin-left:10px;">💾 Sauvegarder</button>
+</div>
+<div class="card">
+<h3 style="margin-bottom:15px;">Configuration</h3>
+<div class="field-group">
+<h4>Rappels</h4>
+<label style="display:flex;gap:8px;align-items:center;margin-bottom:15px;">
+<input type="checkbox" v-model="disboard.remindersEnabled" :disabled="!editingDisboard" style="width:auto;">
+Activer les rappels automatiques
+</label>
+<label style="font-size:13px;display:block;margin-bottom:5px;">Channel de rappel</label>
+<select v-if="editingDisboard" v-model="disboard.remindChannelId" style="width:100%;">
+<option value="">-- Sélectionner un channel --</option>
+<option v-for="(ch,chId) in channels" :key="chId" :value="chId">{{ch.name||chId}}</option>
+</select>
+<div v-else style="padding:10px;background:#1a1a1a;border-radius:6px;">
+<div style="font-weight:500;">{{getChannelName(disboard.remindChannelId)}}</div>
+<div style="font-family:monospace;font-size:10px;opacity:0.4;margin-top:2px;">{{disboard.remindChannelId}}</div>
+</div>
+</div>
+<div class="field-group">
+<h4>État (Lecture seule)</h4>
+<p style="margin-top:10px;">Dernier bump: <strong>{{disboard.lastBumpAt?new Date(disboard.lastBumpAt).toLocaleString('fr-FR'):'Jamais'}}</strong></p>
+<p style="margin-top:10px;">Channel du dernier bump: <strong>{{getChannelName(disboard.lastBumpChannelId)}}</strong></p>
+<p style="margin-top:10px;">Rappel envoyé: <strong>{{disboard.reminded?'✅ Oui':'❌ Non'}}</strong></p>
+</div>
+</div>
+</div>
+
+<!-- Géo -->
+<div v-show="v==='geo'">
+<h2 style="font-size:28px;margin-bottom:20px;">🌍 Géolocalisation</h2>
+<div class="card">
+<h3 style="margin-bottom:15px;">Carte ({{Object.keys(geo.locations||{}).length}} membres)</h3>
+<div id="map" style="height:500px;border-radius:8px;margin-bottom:20px;"></div>
+<button @click="initMap()" class="btn btn-primary">🔄 Recharger la carte</button>
+</div>
+<div class="card">
+<h3 style="margin-bottom:15px;">Liste des localisations</h3>
+<div v-if="Object.keys(geo.locations||{}).length > 0" style="max-height:400px;overflow-y:auto;">
+<div v-for="(location,userId) in geo.locations" :key="userId" style="background:#1a1a1a;padding:15px;margin-bottom:10px;border-radius:8px;cursor:pointer;transition:background 0.2s;" @click="centerMapOn(location.lat,location.lon)" @mouseover="$event.currentTarget.style.background='#252525'" @mouseout="$event.currentTarget.style.background='#1a1a1a'">
+<div style="display:flex;justify-content:space-between;align-items:start;">
+<div style="flex:1;">
+<div style="font-weight:bold;font-size:14px;">{{getMemberName(userId)}}</div>
+<div style="font-family:monospace;font-size:10px;opacity:0.5;margin-top:2px;">{{userId}}</div>
+<div style="font-weight:bold;margin-top:8px;color:#5865F2;">{{location.city||'Ville inconnue'}}</div>
+<div style="margin-top:8px;font-size:13px;">
+<span style="opacity:0.8;">📍 Lat:</span> <code style="background:#0a0a0a;padding:2px 6px;border-radius:4px;">{{location.lat}}</code>
+<span style="opacity:0.8;margin-left:15px;">📍 Lon:</span> <code style="background:#0a0a0a;padding:2px 6px;border-radius:4px;">{{location.lon}}</code>
+</div>
+<div style="margin-top:8px;font-size:11px;opacity:0.6;">
+Mis à jour: {{new Date(location.updatedAt).toLocaleString('fr-FR')}}
+</div>
+</div>
+<div style="margin-left:10px;">
+<button @click.stop="centerMapOn(location.lat,location.lon)" class="btn btn-primary" style="padding:6px 12px;font-size:12px;">📍 Voir sur la carte</button>
+</div>
+</div>
+</div>
+</div>
+<div v-else style="padding:40px;text-align:center;opacity:0.7;">
+Aucune localisation enregistrée
+</div>
+</div>
+</div>
+
+<!-- Actions (GIFs) -->
+<div v-show="v==='actions'">
+<h2 style="font-size:28px;margin-bottom:20px;">🎬 Actions (GIFs)</h2>
+<div class="card" style="margin-bottom:15px;">
+<button @click="editingActions=!editingActions" class="btn btn-primary">
+{{editingActions?'❌ Annuler':'✏️ Mode Édition'}}
+</button>
+<button v-if="editingActions" @click="saveActions()" class="btn btn-success" style="margin-left:10px;">💾 Sauvegarder</button>
+</div>
+<div class="card">
+<h3 style="margin-bottom:15px;">GIFs et Messages par Action</h3>
+<select v-model="selectedAction" @change="selectedZone=''" style="margin-bottom:20px;">
+<option value="">-- Sélectionner une action --</option>
+<option v-for="actionName in Object.keys(actionsGifs).sort()" :key="actionName" :value="actionName">{{actionName}}</option>
+</select>
+<div v-if="selectedAction" style="margin-bottom:20px;">
+<div class="field-group">
+<h4 style="margin-bottom:10px;">📍 Gestion des zones ({{getZonesForAction(selectedAction).length}})</h4>
+<div v-if="editingActions" style="margin-bottom:15px;">
+<label style="font-size:14px;font-weight:500;margin-bottom:8px;display:block;">Ajouter une zone</label>
+<div style="display:flex;gap:10px;">
+<input v-model="newZone" placeholder="Nom de la zone (ex: seins, fesses, cou...)" style="flex:1;">
+<button @click="addZone()" :disabled="!newZone.trim()" class="btn btn-success">Ajouter Zone</button>
+</div>
+</div>
+<div v-if="getZonesForAction(selectedAction).length > 0">
+<label style="font-size:14px;font-weight:500;margin-bottom:8px;display:block;">Sélectionner une zone</label>
+<select v-model="selectedZone" style="width:100%;margin-bottom:10px;">
+<option value="">-- Messages généraux (toutes zones) --</option>
+<option v-for="zone in getZonesForAction(selectedAction)" :key="zone" :value="zone">{{zone}}</option>
+</select>
+<div v-if="editingActions && getZonesForAction(selectedAction).length > 0" style="margin-top:10px;">
+<h5 style="font-size:13px;margin-bottom:8px;opacity:0.8;">Zones configurées :</h5>
+<div style="display:flex;flex-wrap:wrap;gap:6px;">
+<div v-for="zone in getZonesForAction(selectedAction)" :key="zone" style="padding:6px 12px;background:#1a1a1a;border-radius:6px;display:flex;align-items:center;gap:8px;">
+<span style="font-size:13px;">{{zone}}</span>
+<button @click="removeZone(zone)" class="btn btn-danger" style="padding:2px 6px;font-size:11px;">×</button>
+</div>
+</div>
+</div>
+</div>
+<div v-else style="padding:15px;text-align:center;opacity:0.5;">Aucune zone configurée pour cette action</div>
+</div>
+</div>
+<div v-if="selectedAction" style="margin-top:20px;">
+<h4 style="margin-bottom:15px;">{{selectedAction}} <span v-if="selectedZone" style="color:#5865F2;">- Zone: {{selectedZone}}</span><span v-else style="opacity:0.6;font-size:14px;">(général)</span></h4>
+<div class="field-group">
+<h4 style="color:#57F287;">✅ GIFs de succès ({{getSuccessGifsForAction(selectedAction).length}})</h4>
+<div v-if="editingActions" style="margin-bottom:15px;">
+<label style="font-size:14px;font-weight:500;margin-bottom:8px;display:block;">Ajouter des GIFs (un par ligne)</label>
+<textarea v-model="newSuccessGifs" placeholder="https://tenor.com/gif1.gif&#10;https://tenor.com/gif2.gif&#10;https://tenor.com/gif3.gif" rows="4" style="width:100%;margin-bottom:10px;"></textarea>
+<button @click="addSuccessGifs()" :disabled="!newSuccessGifs.trim()" class="btn btn-success">Ajouter GIF(s) de succès</button>
+</div>
+<div v-if="getSuccessGifsForAction(selectedAction).length > 0" style="margin-top:10px;display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;">
+<div v-for="(url,i) in getSuccessGifsForAction(selectedAction)" :key="i" style="padding:10px;background:#1a1a1a;border-radius:8px;">
+<div style="font-size:12px;opacity:0.8;margin-bottom:8px;font-weight:600;color:#57F287;">✅ Succès {{i+1}}</div>
+<div style="width:100%;height:150px;background:#0a0a0a;border-radius:6px;margin-bottom:8px;overflow:hidden;display:flex;align-items:center;justify-content:center;">
+<img :src="'/api/proxy-image?url=' + encodeURIComponent(url)" :alt="'GIF '+i" style="max-width:100%;max-height:100%;object-fit:contain;" @error="$event.target.parentElement.textContent='⚠️ Erreur de chargement'">
+</div>
+<a :href="url" target="_blank" style="color:#5865F2;font-size:10px;word-break:break-all;display:block;margin-bottom:8px;">{{url.length>60?url.substring(0,60)+'...':url}}</a>
+<div style="display:flex;gap:6px;">
+<a :href="url" target="_blank" class="btn btn-primary" style="flex:1;padding:6px;font-size:11px;text-align:center;text-decoration:none;">Ouvrir</a>
+<button v-if="editingActions" @click="removeSuccessGif(i)" class="btn btn-danger" style="flex:1;padding:6px;font-size:11px;">Supprimer</button>
+</div>
+</div>
+</div>
+<div v-else style="padding:15px;text-align:center;opacity:0.5;">Aucun GIF</div>
+</div>
+<div class="field-group" style="margin-top:15px;">
+<h4 style="color:#ED4245;">❌ GIFs d'échec ({{getFailGifsForAction(selectedAction).length}})</h4>
+<div v-if="editingActions" style="margin-bottom:15px;">
+<label style="font-size:14px;font-weight:500;margin-bottom:8px;display:block;">Ajouter des GIFs (un par ligne)</label>
+<textarea v-model="newFailGifs" placeholder="https://tenor.com/gif1.gif&#10;https://tenor.com/gif2.gif&#10;https://tenor.com/gif3.gif" rows="4" style="width:100%;margin-bottom:10px;"></textarea>
+<button @click="addFailGifs()" :disabled="!newFailGifs.trim()" class="btn btn-success">Ajouter GIF(s) d'échec</button>
+</div>
+<div v-if="getFailGifsForAction(selectedAction).length > 0" style="margin-top:10px;display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;">
+<div v-for="(url,i) in getFailGifsForAction(selectedAction)" :key="i" style="padding:10px;background:#1a1a1a;border-radius:8px;">
+<div style="font-size:12px;opacity:0.8;margin-bottom:8px;font-weight:600;color:#ED4245;">❌ Échec {{i+1}}</div>
+<div style="width:100%;height:150px;background:#0a0a0a;border-radius:6px;margin-bottom:8px;overflow:hidden;display:flex;align-items:center;justify-content:center;">
+<img :src="'/api/proxy-image?url=' + encodeURIComponent(url)" :alt="'GIF '+i" style="max-width:100%;max-height:100%;object-fit:contain;" @error="$event.target.parentElement.textContent='⚠️ Erreur de chargement'">
+</div>
+<a :href="url" target="_blank" style="color:#5865F2;font-size:10px;word-break:break-all;display:block;margin-bottom:8px;">{{url.length>60?url.substring(0,60)+'...':url}}</a>
+<div style="display:flex;gap:6px;">
+<a :href="url" target="_blank" class="btn btn-primary" style="flex:1;padding:6px;font-size:11px;text-align:center;text-decoration:none;">Ouvrir</a>
+<button v-if="editingActions" @click="removeFailGif(i)" class="btn btn-danger" style="flex:1;padding:6px;font-size:11px;">Supprimer</button>
+</div>
+</div>
+</div>
+<div v-else style="padding:15px;text-align:center;opacity:0.5;">Aucun GIF</div>
+</div>
+<div class="field-group" style="margin-top:15px;">
+<h4 style="color:#57F287;">💬 Messages de succès ({{getSuccessMessagesCount(selectedAction)}})</h4>
+<div v-if="editingActions" style="margin-bottom:15px;">
+<label style="font-size:14px;font-weight:500;margin-bottom:8px;display:block;">Ajouter un message de succès</label>
+<textarea v-model="newSuccessMessage" placeholder="Message de succès pour cette action..." rows="2" style="width:100%;margin-bottom:10px;"></textarea>
+<button @click="addSuccessMessage()" :disabled="!newSuccessMessage.trim()" class="btn btn-success">Ajouter Message de succès</button>
+</div>
+<div v-if="getSuccessMessagesForAction(selectedAction).length > 0" style="margin-top:10px;">
+<div v-for="(msg,i) in getSuccessMessagesForAction(selectedAction)" :key="i" style="padding:8px;background:#1a1a1a;margin-bottom:6px;border-radius:6px;display:flex;justify-content:space-between;align-items:center;">
+<div style="flex:1;">
+<div style="font-size:11px;opacity:0.8;margin-bottom:4px;">Succès {{i+1}}</div>
+<div style="font-size:13px;line-height:1.4;">{{msg}}</div>
+</div>
+<button v-if="editingActions" @click="removeSuccessMessage(i)" class="btn btn-danger" style="padding:4px 8px;font-size:11px;">×</button>
+</div>
+</div>
+<div v-else style="padding:15px;text-align:center;opacity:0.5;">Aucun message de succès</div>
+</div>
+<div class="field-group" style="margin-top:15px;">
+<h4 style="color:#ED4245;">💬 Messages d'échec ({{getFailMessagesCount(selectedAction)}})</h4>
+<div v-if="editingActions" style="margin-bottom:15px;">
+<label style="font-size:14px;font-weight:500;margin-bottom:8px;display:block;">Ajouter un message d'échec</label>
+<textarea v-model="newFailMessage" placeholder="Message d'échec pour cette action..." rows="2" style="width:100%;margin-bottom:10px;"></textarea>
+<button @click="addFailMessage()" :disabled="!newFailMessage.trim()" class="btn btn-success">Ajouter Message d'échec</button>
+</div>
+<div v-if="getFailMessagesForAction(selectedAction).length > 0" style="margin-top:10px;">
+<div v-for="(msg,i) in getFailMessagesForAction(selectedAction)" :key="i" style="padding:8px;background:#1a1a1a;margin-bottom:6px;border-radius:6px;display:flex;justify-content:space-between;align-items:center;">
+<div style="flex:1;">
+<div style="font-size:11px;opacity:0.8;margin-bottom:4px;">Échec {{i+1}}</div>
+<div style="font-size:13px;line-height:1.4;">{{msg}}</div>
+</div>
+<button v-if="editingActions" @click="removeFailMessage(i)" class="btn btn-danger" style="padding:4px 8px;font-size:11px;">×</button>
+</div>
+</div>
+<div v-else style="padding:15px;text-align:center;opacity:0.5;">Aucun message d'échec</div>
+</div>
+</div>
+</div>
+</div>
+
+<!-- Backups -->
+<div v-show="v==='bak'">
+<h2 style="font-size:28px;margin-bottom:20px;">💾 Backups ({{baks.length}})</h2>
+<div class="card" style="margin-bottom:15px;">
+<button @click="createBak()" class="btn btn-success">Créer Backup</button>
+<button @click="load()" class="btn btn-primary">Rafraîchir</button>
+</div>
+<div class="card">
+<div v-if="baks.length===0" style="text-center:center;padding:40px;opacity:0.7;">
+<p>Aucun backup disponible</p>
+</div>
+<div v-else>
+<div v-for="b in baks" :key="b.filename" style="padding:15px;background:#1a1a1a;margin-bottom:10px;border-radius:8px;display:flex;justify-content:space-between;align-items:center;">
+<div>
+<div style="font-weight:bold;margin-bottom:5px;">{{b.displayName || b.filename}}</div>
+<div style="font-size:13px;opacity:0.7;">{{b.date}} - {{b.size}}</div>
+</div>
+<button @click="restoreBak(b.filename)" class="btn btn-danger">Restaurer</button>
+</div>
+</div>
+</div>
+</div>
+
+<!-- Contrôle Bot -->
+<div v-show="v==='ctrl'">
+<h2 style="font-size:28px;margin-bottom:20px;">🎮 Contrôle Bot</h2>
+<div class="card">
+<h3 style="margin-bottom:20px;font-size:20px;">Actions</h3>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;">
+<button @click="restartBot()" class="btn btn-danger" style="width:100%;padding:15px;font-size:16px;">
+<div style="font-size:24px;margin-bottom:5px;">🔄</div>
+Redémarrer Bot
+</button>
+<button @click="deployCmd()" class="btn btn-success" style="width:100%;padding:15px;font-size:16px;">
+<div style="font-size:24px;margin-bottom:5px;">🚀</div>
+Déployer Commandes
+</button>
+</div>
+<div style="margin-top:30px;padding:20px;background:#1a1a1a;border-radius:8px;">
+<h4 style="margin-bottom:15px;">État</h4>
+<p style="margin-bottom:10px;">Status: <span style="color:#57F287;font-weight:bold;">EN LIGNE</span></p>
+<p style="margin-bottom:10px;">Commandes déployées: <strong>74</strong></p>
+<p>Dashboard V2: <strong>v2.1-extended</strong></p>
+</div>
+</div>
+</div>
+
+</div>
+</div>
+
+<script>
+const{createApp}=Vue;
+createApp({
+data(){return{
+menuOpen:false,isMobile:false,
+v:'d',
+ecoT:'u',eco:{},ecoW:50,ecoF:30,curr:'BAG$',cool:{},actCfg:{},selAct:null,curAct:null,karmaRes:{},
+nivT:'u',niv:{},nivXpMsgMin:15,nivXpMsgMax:35,nivXpVoiceMin:5,nivXpVoiceMax:35,nivCoolMsg:0,nivCoolVoice:60,nivRewards:{},
+boost:{enabled:false,textXpMult:2,voiceXpMult:2,actionCooldownMult:0.5,shopPriceMult:0.5,roles:[]},
+countFormulas:false,countState:{},countAch:[],countChannels:[],newCountChannelId:'',
+avT:'config',avMode:'sfw',avType:'v',tdS:[],tdN:[],tdSfwCh:[],tdNsfwCh:[],newPromptText:'',editingPromptId:null,editingPromptText:'',newAvChannelId:'',
+confMode:'sfw',confess:{sfw:{channels:[]},nsfw:{channels:[]},logChannelId:'',allowReplies:false,threadNaming:'',counter:0,nsfwNames:[]},
+editingConfess:false,newConfessChannel:'',newNsfwName:'',
+editingCount:false,editingWelcome:false,editingGoodbye:false,
+logs:{enabled:false,channelId:'',categories:{},channels:{},actions:{}},
+welcome:{enabled:false,channelId:'',message:'',embedEnabled:false,embedTitle:'',embedDescription:'',embedColor:'',embedFooter:'',sendEmbedInDM:false},
+goodbye:{enabled:false,channelId:'',message:'',embedEnabled:false,embedTitle:'',embedDescription:'',embedColor:'',embedFooter:''},
+baks:[],
+tickT:'config',tickEnabled:false,tickCounter:0,tickets:{categoryId:'',panelChannelId:'',logChannelId:'',transcriptChannelId:''},tickCats:[],tickRecords:{},tickPanel:{},
+channels:{},roles:{},editingCat:-1,editingConfig:false,members:{},memberRoles:{},
+staffRoles:[],newStaffRole:'',
+editingLogs:false,
+autokick:{enabled:false,roleId:'',delayMs:0,pendingJoiners:{}},inactivity:{enabled:false,delayDays:30,excludedRoleIds:[],inactiveRoleId:null},inactivityDelayMode:'30',inactivityCustomDays:30,editingInactivity:false,
+editingAutokick:false,autokickDelayHours:48,
+autothread:{channels:[],naming:{},archive:{},counter:0},
+disboard:{lastBumpAt:0,lastBumpChannelId:'',reminded:false,remindersEnabled:false,remindChannelId:''},
+editingDisboard:false,
+autothread:{channels:[],naming:{},archive:{},counter:0},
+editingAutothread:false,newAutothreadChannel:'',
+geoMap:null,geoMarkers:[],
+geo:{locations:{}},
+actionsGifs:{},
+actionsMessages:{},
+selectedAction:'',
+selectedZone:'',
+editingActions:false,
+newSuccessGifs:'',
+newFailGifs:'',
+newSuccessMessage:'',
+newFailMessage:'',
+newZone:''
+}},
+async mounted(){
+this.checkMobile();
+window.addEventListener(\'resize\',this.checkMobile);
+console.log('🚀 Dashboard V2 Extended mounted');
+await this.load();
+},
+computed:{
+sortedEcoUsers(){
+const activeMembers=Object.entries(this.eco)
+.filter(([uid])=>this.members[uid]!==undefined)
+.map(([uid,data])=>({uid,data}))
+.sort((a,b)=>(b.data.amount||0)-(a.data.amount||0));
+return activeMembers;
+},
+sortedNivUsers(){
+const activeMembers=Object.entries(this.niv)
+.filter(([uid])=>this.members[uid]!==undefined)
+.map(([uid,data])=>({uid,data}))
+.sort((a,b)=>{
+if((b.data.level||0)!==(a.data.level||0)){
+return(b.data.level||0)-(a.data.level||0);
+}
+return(b.data.xp||0)-(a.data.xp||0);
+});
+return activeMembers;
+},
+filteredPendingJoiners(){
+if(!this.autokick||!this.autokick.pendingJoiners)return{};
+const roleId=this.autokick.roleId;
+const filtered={};
+for(const[userId,timestamp]of Object.entries(this.autokick.pendingJoiners)){
+// Exclure si le membre a quitté le serveur
+if(!this.members[userId])continue;
+// Exclure si le membre a le rôle requis
+if(roleId){
+const userRoles=this.memberRoles[userId]||[];
+if(userRoles.includes(roleId))continue;
+}
+filtered[userId]=timestamp;
+}
+return filtered;
+}
+},
+methods:{
+checkMobile(){
+this.isMobile=window.innerWidth<=768;
+if(!this.isMobile)this.menuOpen=false;
+console.log('📱 Mode:',this.isMobile?'Mobile':'Desktop');
+},
+toggleMenu(){
+this.menuOpen=!this.menuOpen;
+},
+closeMenu(){
+if(this.isMobile)this.menuOpen=false;
+},
+navigate(view){
+this.v=view;
+// Appeler la méthode de chargement appropriée
+if(view==='inactivity'&&typeof this.loadInactivity==='function'){
+this.loadInactivity();
+}else if(typeof this.load==='function'){
+this.load();
+}
+this.closeMenu();
+},
+navigateInactivity(){
+this.v='inactivity';
+if(typeof this.loadInactivity==='function')this.loadInactivity();
+this.closeMenu();
+},
+formatDelay(ms){
+const hours=Math.floor(ms/3600000);
+return`${hours} heures (${ms}ms)`;
+},
+isExpired(timestamp){
+return Date.now()-timestamp>this.autokick.delayMs;
+},
+formatTimeAgo(timestamp){
+const diff=Date.now()-timestamp;
+const days=Math.floor(diff/86400000);
+const hours=Math.floor((diff%86400000)/3600000);
+if(days>0)return`il y a ${days}j ${hours}h`;
+return`il y a ${hours}h`;
+},
+uploadImage(e,field){
+const file=e.target.files[0];
+if(!file){return;}
+if(file.size>5*1024*1024){alert('❌ Fichier trop gros (max 5MB)');return;}
+const reader=new FileReader();
+reader.onload=(ev)=>{
+const base64=ev.target.result;
+if(field==='imageUrl')this.tickPanel.imageUrl=base64;
+else if(field==='thumbnailUrl')this.tickPanel.thumbnailUrl=base64;
+else if(field.startsWith('banner')){
+const idx=parseInt(field.split('-')[1]);
+this.tickCats[idx].bannerUrl=base64;
+}
+};
+reader.readAsDataURL(file);
+},
+async savePanel(){
+if(!confirm('Sauvegarder le panel?'))return;
+const r=await this.api('/api/tickets',{method:'POST',body:JSON.stringify({panel:this.tickPanel})});
+if(r&&r.success){alert('✅ Panel sauvegardé');}else{alert('❌ Erreur');}
+},
+async saveConfig(){
+if(!confirm('Sauvegarder la configuration?'))return;
+const r=await this.api('/api/tickets',{method:'POST',body:JSON.stringify({config:this.tickConfig})});
+if(r&&r.success){alert('✅ Config sauvegardée');this.editingConfig=false;}else{alert('❌ Erreur');}
+},
+getMemberName(id){
+if(!id)return'Inconnu';
+return this.members[id]||id;
+},
+getRoleName(id){
+if(!id)return'Inconnu';
+return this.roles[id]||id;
+},
+getChannelName(id){
+if(!id)return'Non configuré';
+return this.channels[id]||id;
+},
+async saveCat(idx){if(!confirm('Sauvegarder?'))return;const r=await this.api('/api/tickets',{method:'POST',body:JSON.stringify({categories:this.tickCats})});if(r&&r.success){alert('✅ Sauvegardé');this.editingCat=-1;}else{alert('❌ Erreur');}},
+async api(u,o={}){
+try{
+console.log('🌐 API Call:',o.method||'GET',u);
+const r=await fetch(`http://82.67.65.98:3002${u}`,{...o,headers:{'Content-Type':'application/json'}});
+if(!r.ok){
+console.error(`❌ HTTP ${r.status} ${r.statusText}`);
+return {success:false,error:`HTTP ${r.status}`};
+}
+const d=await r.json();
+console.log('✓',u.split('/').pop(),d.success?'✅':'❌');
+return d;
+}catch(e){
+console.error('❌ API Error:',e);
+return {success:false,error:e.message};
+}
+},
+async load(){
+console.log('Chargement...');
+const cfg=await this.api('/api/configs');
+if(cfg){
+if(cfg.economy){
+this.eco=cfg.economy.balances||{};
+this.ecoW=cfg.economy.settings?.baseWorkReward||50;
+this.ecoF=cfg.economy.settings?.baseFishReward||30;
+this.curr=cfg.economy.currency?.name||'BAG$';
+this.cool=cfg.economy.settings?.cooldowns||{};
+this.actCfg=cfg.economy.actions?.config||{};
+this.karmaRes=cfg.economy.karmaReset||{};
+this.actionsGifs=cfg.economy.actions?.gifs||{};
+this.actionsMessages=cfg.economy.actions?.messages||{};
+for(const action in this.actionsGifs){
+if(!this.actionsGifs[action].success){
+this.actionsGifs[action].success=[];
+}
+if(!this.actionsGifs[action].fail){
+this.actionsGifs[action].fail=[];
+}
+}
+for(const action in this.actionsMessages){
+if(!this.actionsGifs[action]){
+this.actionsGifs[action]={success:[],fail:[]};
+}
+this.actionsGifs[action].messages=this.actionsMessages[action];
+}
+if(cfg.economy.booster){
+this.boost=cfg.economy.booster;
+}
+console.log('✓ Éco:',Object.keys(this.eco).length);
+}
+if(cfg.levels){
+this.niv=cfg.levels.users||{};
+this.nivXpMsgMin=cfg.levels.xpMessageMin||15;
+this.nivXpMsgMax=cfg.levels.xpMessageMax||35;
+this.nivXpVoiceMin=cfg.levels.xpVoiceMin||5;
+this.nivXpVoiceMax=cfg.levels.xpVoiceMax||35;
+this.nivCoolMsg=cfg.levels.messageCooldownSec||0;
+this.nivCoolVoice=cfg.levels.voiceCooldownSec||60;
+this.nivRewards=cfg.levels.rewards||{};
+console.log('✓ Niv:',Object.keys(this.niv).length);
+}
+if(cfg.truthdare){
+this.tdS=cfg.truthdare.sfw?.prompts||[];
+this.tdN=cfg.truthdare.nsfw?.prompts||[];
+this.tdSfwCh=cfg.truthdare.sfw?.channels||[];
+this.tdNsfwCh=cfg.truthdare.nsfw?.channels||[];
+console.log('✓ TD:',this.tdS.length+this.tdN.length);
+}
+if(cfg.counting){
+this.countFormulas=cfg.counting.allowFormulas||false;
+this.countState=cfg.counting.state||{};
+this.countAch=cfg.counting.achievedNumbers||[];
+this.countChannels=cfg.counting.channels||[];
+}
+if(cfg.tickets){
+this.tickEnabled=cfg.tickets.enabled||false;
+this.tickCounter=cfg.tickets.counter||0;
+this.tickets={
+categoryId:cfg.tickets.categoryId||'',
+panelChannelId:cfg.tickets.panelChannelId||'',
+logChannelId:cfg.tickets.logChannelId||'',
+transcriptChannelId:cfg.tickets.transcriptChannelId||''
+};
+this.tickCats=cfg.tickets.categories||[];
+this.tickRecords=cfg.tickets.records||{};
+this.tickPanel=cfg.tickets.panel||{};
+console.log('✓ Tickets:',Object.keys(this.tickRecords).length);
+}
+if(cfg.logs){
+this.logs=cfg.logs;
+console.log('✓ Logs:',Object.keys(this.logs.categories||{}).length,'categories');
+}
+if(cfg.welcome){
+this.welcome=cfg.welcome;
+console.log('✓ Welcome');
+}
+if(cfg.goodbye){
+this.goodbye=cfg.goodbye;
+console.log('✓ Goodbye');
+}
+if(cfg.staffRoleIds){
+this.staffRoles=cfg.staffRoleIds||[];
+console.log('✓ Staff:',this.staffRoles.length);
+}
+if(cfg.autokick){
+this.autokick=cfg.autokick;
+console.log('✓ AutoKick:',Object.keys(this.autokick.pendingJoiners||{}).length);
+}
+if(cfg.autothread){
+this.autothread=cfg.autothread;
+if(!this.autothread.naming)this.autothread.naming={mode:'default'};
+if(!this.autothread.archive)this.autothread.archive={policy:'max'};
+console.log('✓ AutoThread:',this.autothread.channels?.length||0);
+}
+if(cfg.geo){
+this.geo=cfg.geo;
+setTimeout(()=>this.initMap(),500);
+console.log('✓ Geo:',Object.keys(this.geo.locations||{}).length);
+}
+if(cfg.disboard){
+this.disboard=cfg.disboard;
+console.log('✓ Disboard');
+}
+if(cfg.confess){
+this.confess=cfg.confess;
+if(!this.confess.sfw)this.confess.sfw={channels:[]};
+if(!this.confess.nsfw)this.confess.nsfw={channels:[]};
+if(!this.confess.nsfwNames)this.confess.nsfwNames=[];
+console.log('✓ Confess:',this.confess.counter||0,'confessions');
+}
+const ch=await this.api('/api/discord/channels');
+if(ch)this.channels=ch;
+const rol=await this.api('/api/discord/roles');
+if(rol)this.roles=rol;
+const memb=await this.api('/api/discord/members');
+if(memb){
+if(memb.names){
+this.members=memb.names;
+this.memberRoles=memb.roles||{};
+}else{
+this.members=memb;
+this.memberRoles={};
+}
+}
+const bak=await this.api('/backups');
+if(bak)this.baks=bak.backups||[];
+}
+},
+loadAct(){this.curAct=this.actCfg[this.selAct]||{};},
+async saveEco(){
+await this.api('/api/economy',{method:'POST',body:JSON.stringify({settings:{baseWorkReward:this.ecoW,baseFishReward:this.ecoF,cooldowns:this.cool},currency:{name:this.curr}})});
+alert('✅ Sauvegardé');
+},
+async createBak(){
+if(!confirm('Créer backup?'))return;
+const r=await this.api('/backup',{method:'POST'});
+if(r){alert('✅ Créé');await this.load();}
+},
+async restoreBak(f){
+if(!confirm(`Restaurer ${f}?`))return;
+const r=await this.api('/restore',{method:'POST',body:JSON.stringify({filename:f})});
+if(r){alert('✅ Restauré');location.reload();}
+},
+async restartBot(){
+if(!confirm('Redémarrer le bot?'))return;
+const r=await this.api('/bot/control',{method:'POST',body:JSON.stringify({action:'restart'})});
+if(r)alert('✅ Bot en cours de redémarrage...');
+},
+async deployCmd(){
+if(!confirm('Déployer toutes les commandes?'))return;
+const r=await this.api('/bot/control',{method:'POST',body:JSON.stringify({action:'deploy'})});
+if(r)alert('✅ Déploiement en cours...');
+},
+async addStaffRole(){
+if(!this.newStaffRole){alert('❌ Sélectionnez un rôle');return;}
+if(this.staffRoles.includes(this.newStaffRole)){alert('❌ Ce rôle est déjà dans la liste');return;}
+this.staffRoles.push(this.newStaffRole);
+const r=await this.api('/api/staff',{method:'POST',body:JSON.stringify({staffRoleIds:this.staffRoles})});
+if(r&&r.success){
+alert('✅ Rôle ajouté');
+this.newStaffRole='';
+}else{
+alert('❌ Erreur lors de l\'ajout');
+this.staffRoles.pop();
+}
+},
+async removeStaffRole(idx){
+if(!confirm('Supprimer ce rôle staff ?'))return;
+const removed=this.staffRoles.splice(idx,1);
+const r=await this.api('/api/staff',{method:'POST',body:JSON.stringify({staffRoleIds:this.staffRoles})});
+if(r&&r.success){
+alert('✅ Rôle supprimé');
+}else{
+alert('❌ Erreur lors de la suppression');
+this.staffRoles.splice(idx,0,removed[0]);
+}
+},
+async saveLogs(){
+if(!confirm('Sauvegarder la configuration des logs ?'))return;
+const r=await this.api('/api/logs',{method:'POST',body:JSON.stringify({logs:this.logs})});
+if(r&&r.success){
+alert('✅ Configuration sauvegardée');
+this.editingLogs=false;
+await this.load();
+}else{
+alert('❌ Erreur lors de la sauvegarde');
+}
+},
+async saveConfess(){
+if(!confirm('Sauvegarder la configuration des confessions ?'))return;
+const r=await this.api('/api/confess',{method:'POST',body:JSON.stringify({settings:this.confess})});
+if(r&&r.success){
+alert('✅ Configuration sauvegardée');
+this.editingConfess=false;
+await this.load();
+}else{
+alert('❌ Erreur lors de la sauvegarde');
+}
+},
+addConfessChannel(){
+if(!this.newConfessChannel){alert('❌ Sélectionnez un channel');return;}
+if(this.confess[this.confMode].channels.includes(this.newConfessChannel)){
+alert('❌ Ce channel est déjà dans la liste');
+return;
+}
+this.confess[this.confMode].channels.push(this.newConfessChannel);
+this.newConfessChannel='';
+},
+removeConfessChannel(idx){
+if(!confirm('Supprimer ce channel ?'))return;
+this.confess[this.confMode].channels.splice(idx,1);
+},
+addNsfwName(){
+if(!this.newNsfwName || !this.newNsfwName.trim()){alert('❌ Entrez un nom');return;}
+if(this.confess.nsfwNames.includes(this.newNsfwName.trim())){
+alert('❌ Ce nom existe déjà');
+return;
+}
+this.confess.nsfwNames.push(this.newNsfwName.trim());
+this.newNsfwName='';
+},
+removeNsfwName(idx){
+if(!confirm('Supprimer ce nom ?'))return;
+this.confess.nsfwNames.splice(idx,1);
+},
+async saveAutokick(){
+if(!confirm('Sauvegarder la configuration AutoKick ?'))return;
+this.autokick.delayMs=this.autokickDelayHours*3600000;
+const r=await this.api('/api/autokick',{method:'POST',body:JSON.stringify({autokick:this.autokick})});
+if(r&&r.success){
+alert('✅ Configuration sauvegardée');
+this.editingAutokick=false;
+await this.load();
+}else{
+alert('❌ Erreur lors de la sauvegarde');
+}
+},
+getDelayLabel(days){
+if(!days)return'Non configuré';
+if(days>=999999)return'Jamais (toujours actif)';
+if(days<1)return'1 minute (test)';
+if(days===1)return'1 jour';
+if(days===7)return'1 semaine';
+if(days===30)return'1 mois';
+if(days===60)return'2 mois';
+if(days===90)return'3 mois';
+return`${days} jours (personnalisé)`;
+},
+updateDelayFromMode(){
+if(this.inactivityDelayMode==='custom'){
+this.inactivity.delayDays=this.inactivityCustomDays;
+}else{
+this.inactivity.delayDays=parseFloat(this.inactivityDelayMode);
+}
+},
+async loadInactivity(){
+const r=await this.api('/api/inactivity');
+if(r){
+this.inactivity=r;
+// Initialiser le mode du sélecteur en fonction de delayDays
+const days=r.delayDays;
+if(days<1)this.inactivityDelayMode='0.0007';
+else if(days===1)this.inactivityDelayMode='1';
+else if(days===7)this.inactivityDelayMode='7';
+else if(days===30)this.inactivityDelayMode='30';
+else if(days===60)this.inactivityDelayMode='60';
+else if(days===90)this.inactivityDelayMode='90';
+else if(days>=999999)this.inactivityDelayMode='999999';
+else{
+this.inactivityDelayMode='custom';
+this.inactivityCustomDays=days;
+}
+// Ajouter automatiquement le rôle inactif aux exclus s'il est configuré
+if(r.inactiveRoleId && !r.excludedRoleIds.includes(r.inactiveRoleId)){
+r.excludedRoleIds.push(r.inactiveRoleId);
+}
+}
+},
+async saveInactivity(){
+if(!confirm('Sauvegarder la configuration Inactivité?'))return;
+// Mettre à jour delayDays depuis le sélecteur
+this.updateDelayFromMode();
+// Ajouter automatiquement le rôle inactif aux exclus s'il est configuré
+if(this.inactivity.inactiveRoleId && !this.inactivity.excludedRoleIds.includes(this.inactivity.inactiveRoleId)){
+this.inactivity.excludedRoleIds.push(this.inactivity.inactiveRoleId);
+}
+const r=await this.api('/api/inactivity',{method:'POST',body:JSON.stringify(this.inactivity)});
+if(r&&r.success){
+alert('✅ Configuration Inactivité sauvegardée\n\nLes membres peuvent maintenant utiliser /inactif declarer pour obtenir le rôle et être protégés du kick.');
+this.editingInactivity=false;
+await this.loadInactivity();
+}else{
+alert('❌ Erreur lors de la sauvegarde');
+}
+},
+async cleanExpiredAutokick(){
+if(!confirm(`Nettoyer ${this.expiredAutokickCount} membres expirés de la liste d'attente ?\\n\\n⚠️ Attention: Cela ne les kickera pas du serveur, mais les retirera simplement de la liste de surveillance.`))return;
+const now=Date.now();
+const cleaned={};
+for(const[userId,timestamp]of Object.entries(this.autokick.pendingJoiners||{})){
+if(now-timestamp<=this.autokick.delayMs){
+cleaned[userId]=timestamp;
+}
+}
+this.autokick.pendingJoiners=cleaned;
+const r=await this.api('/api/autokick',{method:'POST',body:JSON.stringify({autokick:this.autokick})});
+if(r&&r.success){
+alert(`✅ ${this.expiredAutokickCount} membres nettoyés`);
+await this.load();
+}else{
+alert('❌ Erreur lors du nettoyage');
+}
+},
+async saveDisboard(){
+if(!confirm('Sauvegarder la configuration Disboard ?'))return;
+const r=await this.api('/api/disboard',{method:'POST',body:JSON.stringify({disboard:this.disboard})});
+if(r&&r.success){
+alert('✅ Configuration sauvegardée');
+this.editingDisboard=false;
+await this.load();
+}else{
+alert('❌ Erreur lors de la sauvegarde');
+}
+},
+async saveAutothread(){
+if(!confirm('Sauvegarder la configuration AutoThread ?'))return;
+const r=await this.api('/api/autothread',{method:'POST',body:JSON.stringify({autothread:this.autothread})});
+if(r&&r.success){
+alert('✅ Configuration sauvegardée');
+this.editingAutothread=false;
+await this.load();
+}else{
+alert('❌ Erreur lors de la sauvegarde');
+}
+},
+addAutothreadChannel(){
+if(!this.newAutothreadChannel){alert('❌ Sélectionnez un channel');return;}
+if(this.autothread.channels.includes(this.newAutothreadChannel)){
+alert('❌ Ce channel est déjà dans la liste');
+return;
+}
+this.autothread.channels.push(this.newAutothreadChannel);
+this.newAutothreadChannel='';
+},
+removeAutothreadChannel(idx){
+if(!confirm('Supprimer ce channel ?'))return;
+this.autothread.channels.splice(idx,1);
+},
+initMap(){
+if(this.v!=='geo')return;
+if(!window.L)return;
+if(this.geoMap){
+this.geoMap.remove();
+}
+this.geoMap=L.map('map').setView([46.603354,1.888334],6);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+maxZoom:19
+}).addTo(this.geoMap);
+this.geoMarkers=[];
+for(const[userId,location]of Object.entries(this.geo.locations||{})){
+const marker=L.marker([location.lat,location.lon]).addTo(this.geoMap);
+const memberName=this.getMemberName(userId);
+marker.bindPopup(`<b>${memberName}</b><br>${location.city||'Ville inconnue'}`);
+this.geoMarkers.push(marker);
+}
+if(this.geoMarkers.length>0){
+const group=L.featureGroup(this.geoMarkers);
+this.geoMap.fitBounds(group.getBounds().pad(0.1));
+}
+},
+centerMapOn(lat,lon){
+if(this.geoMap){
+this.geoMap.setView([lat,lon],12);
+}
+},
+getZonesForAction(actionName){
+if(!actionName || !this.actCfg[actionName]) return [];
+return this.actCfg[actionName].zones || [];
+},
+getSuccessGifsForAction(actionName){
+if(!actionName || !this.actionsGifs[actionName]) return [];
+return this.actionsGifs[actionName].success || [];
+},
+getFailGifsForAction(actionName){
+if(!actionName || !this.actionsGifs[actionName]) return [];
+return this.actionsGifs[actionName].fail || [];
+},
+getSuccessMessagesCount(actionName){
+return this.getSuccessMessagesForAction(actionName).length;
+},
+getFailMessagesCount(actionName){
+return this.getFailMessagesForAction(actionName).length;
+},
+hasZoneSpecificMessages(actionName){
+if(!actionName || !this.actionsGifs[actionName]) return false;
+if(!this.selectedZone) return false;
+if(!this.actionsGifs[actionName].messages) return false;
+if(!this.actionsGifs[actionName].messages.zones) return false;
+if(!this.actionsGifs[actionName].messages.zones[this.selectedZone]) return false;
+const zoneSuccessMessages = this.actionsGifs[actionName].messages.zones[this.selectedZone].success || [];
+const zoneFailMessages = this.actionsGifs[actionName].messages.zones[this.selectedZone].fail || [];
+return zoneSuccessMessages.length > 0 || zoneFailMessages.length > 0;
+},
+getSuccessMessagesForAction(actionName){
+if(!actionName || !this.actionsGifs[actionName]) return [];
+if(!this.actionsGifs[actionName].messages) return [];
+if(this.selectedZone){
+// Messages de la zone uniquement (pas de fallback)
+if(this.actionsGifs[actionName].messages.zones && this.actionsGifs[actionName].messages.zones[this.selectedZone]){
+return this.actionsGifs[actionName].messages.zones[this.selectedZone].success || [];
+}
+return [];
+}else{
+// Messages généraux uniquement
+return this.actionsGifs[actionName].messages.success || [];
+}
+},
+getFailMessagesForAction(actionName){
+if(!actionName || !this.actionsGifs[actionName]) return [];
+if(!this.actionsGifs[actionName].messages) return [];
+if(this.selectedZone){
+// Messages de la zone uniquement (pas de fallback)
+if(this.actionsGifs[actionName].messages.zones && this.actionsGifs[actionName].messages.zones[this.selectedZone]){
+return this.actionsGifs[actionName].messages.zones[this.selectedZone].fail || [];
+}
+return [];
+}else{
+// Messages généraux uniquement
+return this.actionsGifs[actionName].messages.fail || [];
+}
+},
+addSuccessGifs(){
+if(!this.selectedAction){alert('❌ Sélectionnez une action');return;}
+if(!this.newSuccessGifs.trim()){alert('❌ Entrez au moins un GIF');return;}
+const urls=this.newSuccessGifs.split('\n').map(u=>u.trim()).filter(u=>u.length>0);
+if(urls.length===0){alert('❌ Aucun GIF valide');return;}
+if(!this.actionsGifs[this.selectedAction]){
+this.actionsGifs[this.selectedAction]={success:[],fail:[],messages:{success:[],fail:[],zones:{}}};
+}
+if(!this.actionsGifs[this.selectedAction].success){
+this.actionsGifs[this.selectedAction].success=[];
+}
+this.actionsGifs[this.selectedAction].success.push(...urls);
+this.newSuccessGifs='';
+alert(`✅ ${urls.length} GIF(s) de succès ajouté(s) (aléatoire toutes zones)`);
+},
+addFailGifs(){
+if(!this.selectedAction){alert('❌ Sélectionnez une action');return;}
+if(!this.newFailGifs.trim()){alert('❌ Entrez au moins un GIF');return;}
+const urls=this.newFailGifs.split('\n').map(u=>u.trim()).filter(u=>u.length>0);
+if(urls.length===0){alert('❌ Aucun GIF valide');return;}
+if(!this.actionsGifs[this.selectedAction]){
+this.actionsGifs[this.selectedAction]={success:[],fail:[],messages:{success:[],fail:[],zones:{}}};
+}
+if(!this.actionsGifs[this.selectedAction].fail){
+this.actionsGifs[this.selectedAction].fail=[];
+}
+this.actionsGifs[this.selectedAction].fail.push(...urls);
+this.newFailGifs='';
+alert(`✅ ${urls.length} GIF(s) d'échec ajouté(s) (aléatoire toutes zones)`);
+},
+addSuccessMessage(){
+if(!this.selectedAction){alert('❌ Sélectionnez une action');return;}
+if(!this.newSuccessMessage.trim()){alert('❌ Entrez un message');return;}
+if(!this.actionsGifs[this.selectedAction]){
+this.actionsGifs[this.selectedAction]={success:[],fail:[],messages:{success:[],fail:[],zones:{}}};
+}
+if(!this.actionsGifs[this.selectedAction].messages){
+this.actionsGifs[this.selectedAction].messages={success:[],fail:[],zones:{}};
+}
+if(this.selectedZone){
+if(!this.actionsGifs[this.selectedAction].messages.zones){
+this.actionsGifs[this.selectedAction].messages.zones={};
+}
+if(!this.actionsGifs[this.selectedAction].messages.zones[this.selectedZone]){
+this.actionsGifs[this.selectedAction].messages.zones[this.selectedZone]={success:[],fail:[]};
+}
+if(!this.actionsGifs[this.selectedAction].messages.zones[this.selectedZone].success){
+this.actionsGifs[this.selectedAction].messages.zones[this.selectedZone].success=[];
+}
+this.actionsGifs[this.selectedAction].messages.zones[this.selectedZone].success.push(this.newSuccessMessage.trim());
+}else{
+if(!this.actionsGifs[this.selectedAction].messages.success){
+this.actionsGifs[this.selectedAction].messages.success=[];
+}
+this.actionsGifs[this.selectedAction].messages.success.push(this.newSuccessMessage.trim());
+}
+this.newSuccessMessage='';
+alert('✅ Message de succès ajouté');
+},
+addFailMessage(){
+if(!this.selectedAction){alert('❌ Sélectionnez une action');return;}
+if(!this.newFailMessage.trim()){alert('❌ Entrez un message');return;}
+if(!this.actionsGifs[this.selectedAction]){
+this.actionsGifs[this.selectedAction]={success:[],fail:[],messages:{success:[],fail:[],zones:{}}};
+}
+if(!this.actionsGifs[this.selectedAction].messages){
+this.actionsGifs[this.selectedAction].messages={success:[],fail:[],zones:{}};
+}
+if(this.selectedZone){
+if(!this.actionsGifs[this.selectedAction].messages.zones){
+this.actionsGifs[this.selectedAction].messages.zones={};
+}
+if(!this.actionsGifs[this.selectedAction].messages.zones[this.selectedZone]){
+this.actionsGifs[this.selectedAction].messages.zones[this.selectedZone]={success:[],fail:[]};
+}
+if(!this.actionsGifs[this.selectedAction].messages.zones[this.selectedZone].fail){
+this.actionsGifs[this.selectedAction].messages.zones[this.selectedZone].fail=[];
+}
+this.actionsGifs[this.selectedAction].messages.zones[this.selectedZone].fail.push(this.newFailMessage.trim());
+}else{
+if(!this.actionsGifs[this.selectedAction].messages.fail){
+this.actionsGifs[this.selectedAction].messages.fail=[];
+}
+this.actionsGifs[this.selectedAction].messages.fail.push(this.newFailMessage.trim());
+}
+this.newFailMessage='';
+alert('✅ Message d\'échec ajouté');
+},
+removeSuccessGif(i){
+if(!this.selectedAction)return;
+if(this.actionsGifs[this.selectedAction]?.success){
+this.actionsGifs[this.selectedAction].success.splice(i,1);
+}
+},
+removeFailGif(i){
+if(!this.selectedAction)return;
+if(this.actionsGifs[this.selectedAction]?.fail){
+this.actionsGifs[this.selectedAction].fail.splice(i,1);
+}
+},
+removeSuccessMessage(i){
+if(!this.selectedAction)return;
+if(this.selectedZone){
+if(this.actionsGifs[this.selectedAction]?.messages?.zones?.[this.selectedZone]?.success){
+this.actionsGifs[this.selectedAction].messages.zones[this.selectedZone].success.splice(i,1);
+}
+}else{
+if(this.actionsGifs[this.selectedAction]?.messages?.success){
+this.actionsGifs[this.selectedAction].messages.success.splice(i,1);
+}
+}
+},
+removeFailMessage(i){
+if(!this.selectedAction)return;
+if(this.selectedZone){
+if(this.actionsGifs[this.selectedAction]?.messages?.zones?.[this.selectedZone]?.fail){
+this.actionsGifs[this.selectedAction].messages.zones[this.selectedZone].fail.splice(i,1);
+}
+}else{
+if(this.actionsGifs[this.selectedAction]?.messages?.fail){
+this.actionsGifs[this.selectedAction].messages.fail.splice(i,1);
+}
+}
+},
+removeSuccessGif(idx){
+if(!confirm('Supprimer ce GIF de succès ?'))return;
+this.actionsGifs[this.selectedAction].success.splice(idx,1);
+},
+removeFailGif(idx){
+if(!confirm('Supprimer ce GIF d\'échec ?'))return;
+this.actionsGifs[this.selectedAction].fail.splice(idx,1);
+},
+removeSuccessMessage(idx){
+if(!confirm('Supprimer ce message de succès ?'))return;
+if(this.selectedZone){
+this.actionsGifs[this.selectedAction].messages.zones[this.selectedZone].success.splice(idx,1);
+}else{
+this.actionsGifs[this.selectedAction].messages.success.splice(idx,1);
+}
+},
+removeFailMessage(idx){
+if(!confirm('Supprimer ce message d\'échec ?'))return;
+if(this.selectedZone){
+this.actionsGifs[this.selectedAction].messages.zones[this.selectedZone].fail.splice(idx,1);
+}else{
+this.actionsGifs[this.selectedAction].messages.fail.splice(idx,1);
+}
+},
+addZone(){
+if(!this.selectedAction){alert('❌ Sélectionnez une action');return;}
+if(!this.newZone.trim()){alert('❌ Entrez un nom de zone');return;}
+const zoneName=this.newZone.trim();
+if(!this.actCfg[this.selectedAction]){
+this.actCfg[this.selectedAction]={zones:[]};
+}
+if(!this.actCfg[this.selectedAction].zones){
+this.actCfg[this.selectedAction].zones=[];
+}
+if(this.actCfg[this.selectedAction].zones.includes(zoneName)){
+alert('❌ Cette zone existe déjà');
+return;
+}
+this.actCfg[this.selectedAction].zones.push(zoneName);
+this.newZone='';
+alert('✅ Zone ajoutée');
+},
+removeZone(zoneName){
+if(!confirm(`Supprimer la zone "${zoneName}" ?\n\n⚠️ Cela supprimera aussi tous les messages associés à cette zone.`))return;
+if(!this.actCfg[this.selectedAction] || !this.actCfg[this.selectedAction].zones)return;
+const idx=this.actCfg[this.selectedAction].zones.indexOf(zoneName);
+if(idx>-1){
+this.actCfg[this.selectedAction].zones.splice(idx,1);
+}
+if(this.actionsGifs[this.selectedAction] && this.actionsGifs[this.selectedAction].messages && this.actionsGifs[this.selectedAction].messages.zones){
+delete this.actionsGifs[this.selectedAction].messages.zones[zoneName];
+}
+if(this.selectedZone===zoneName){
+this.selectedZone='';
+}
+alert('✅ Zone supprimée');
+},
+async saveActions(){
+if(!confirm('Sauvegarder les modifications des actions ?'))return;
+console.log('🔄 Sauvegarde des actions (GIFs, messages, config)...');
+const gifs={};
+const messages={};
+for(const action in this.actionsGifs){
+gifs[action]={
+success:this.actionsGifs[action].success||[],
+fail:this.actionsGifs[action].fail||[]
+};
+if(this.actionsGifs[action].messages){
+messages[action]=this.actionsGifs[action].messages;
+}
+}
+console.log('Actions à sauvegarder:',Object.keys(gifs).length);
+const r=await this.api('/api/actions',{method:'POST',body:JSON.stringify({gifs:gifs,messages:messages,config:this.actCfg})});
+console.log('Résultat sauvegarde actions:',r);
+if(r&&r.success){
+alert('✅ Actions sauvegardées (GIFs, messages et zones)');
+this.editingActions=false;
+await this.load();
+}else{
+console.error('❌ Erreur sauvegarde actions:',r);
+alert('❌ Erreur lors de la sauvegarde: '+(r?.error||'Erreur inconnue'));
+}
+},
+startEditPrompt(p){
+this.editingPromptId=p.id;
+this.editingPromptText=p.text;
+},
+async saveAvPrompt(p){
+if(!this.editingPromptText.trim()){alert('❌ Texte vide');return;}
+const mode=this.avMode==='sfw'?'sfw':'nsfw';
+console.log(`🔄 Sauvegarde prompt #${p.id} mode:${mode} type:${p.type}`);
+const r=await this.api(`/api/truthdare/${mode}/${p.id}`,{method:'PATCH',body:JSON.stringify({text:this.editingPromptText})});
+console.log('Résultat API:',r);
+if(r&&r.success){
+p.text=this.editingPromptText;
+this.editingPromptId=null;
+this.editingPromptText='';
+alert('✅ Prompt modifié');
+console.log('Rechargement des données...');
+await this.load();
+console.log('✅ Rechargement terminé');
+}else{
+console.error('❌ Erreur lors de la sauvegarde:',r);
+alert('❌ Erreur: '+(r?.error||'Erreur inconnue'));
+}
+},
+async deleteAvPrompt(p){
+if(!confirm(`Supprimer #${p.id} ?`))return;
+const mode=this.avMode==='sfw'?'sfw':'nsfw';
+const r=await this.api(`/api/truthdare/${mode}/${p.id}`,{method:'DELETE'});
+if(r&&r.success){
+alert('✅ Supprimé');
+await this.load();
+}else{
+alert('❌ Erreur');
+}
+},
+async addAvPrompt(){
+if(!this.newPromptText.trim()){alert('❌ Texte vide');return;}
+const mode=this.avMode==='sfw'?'sfw':'nsfw';
+const type=this.avType==='v'?'verite':'action';
+const lines=this.newPromptText.split('\n').map(l=>l.trim()).filter(l=>l.length>0);
+if(lines.length===0){alert('❌ Aucun prompt valide');return;}
+let success=0;
+let failed=0;
+for(const text of lines){
+const r=await this.api(`/api/truthdare/${mode}`,{method:'POST',body:JSON.stringify({type:type,text:text})});
+if(r&&r.success){
+success++;
+}else{
+failed++;
+}
+}
+this.newPromptText='';
+if(failed===0){
+alert(`✅ ${success} prompt(s) ajouté(s)`);
+}else{
+alert(`⚠️ ${success} ajouté(s), ${failed} échec(s)`);
+}
+await this.load();
+},
+async addAvChannel(){
+if(!this.newAvChannelId){alert('❌ Sélectionnez un channel');return;}
+const mode=this.avMode==='sfw'?'sfw':'nsfw';
+const list=mode==='sfw'?this.tdSfwCh:this.tdNsfwCh;
+if(list.includes(this.newAvChannelId)){alert('❌ Ce channel est déjà dans la liste');return;}
+const r=await this.api(`/api/truthdare/${mode}/channels`,{method:'POST',body:JSON.stringify({channelId:this.newAvChannelId})});
+if(r&&r.success){
+this.newAvChannelId='';
+alert('✅ Channel ajouté');
+await this.load();
+}else{
+alert('❌ Erreur');
+}
+},
+async deleteAvChannel(mode,channelId){
+if(!confirm('Supprimer ce channel ?'))return;
+const r=await this.api(`/api/truthdare/${mode}/channels/${channelId}`,{method:'DELETE'});
+if(r&&r.success){
+alert('✅ Channel supprimé');
+await this.load();
+}else{
+alert('❌ Erreur');
+}
+},
+async saveCount(){
+if(!confirm('Sauvegarder la configuration ?'))return;
+const r=await this.api('/api/counting',{method:'POST',body:JSON.stringify({allowFormulas:this.countFormulas,channels:this.countChannels})});
+if(r&&r.success){
+alert('✅ Sauvegardé');
+this.editingCount=false;
+await this.load();
+}else{
+alert('❌ Erreur');
+}
+},
+async addCountChannel(){
+if(!this.newCountChannelId){alert('❌ Sélectionnez un channel');return;}
+if(this.countChannels.includes(this.newCountChannelId)){alert('❌ Ce channel est déjà dans la liste');return;}
+const r=await this.api('/api/counting/channels',{method:'POST',body:JSON.stringify({channelId:this.newCountChannelId})});
+if(r&&r.success){
+this.newCountChannelId='';
+alert('✅ Channel ajouté');
+await this.load();
+}else{
+alert('❌ Erreur');
+}
+},
+async deleteCountChannel(chId){
+if(!confirm('Supprimer ce channel ?'))return;
+const r=await this.api(`/api/counting/channels/${chId}`,{method:'DELETE'});
+if(r&&r.success){
+alert('✅ Channel supprimé');
+await this.load();
+}else{
+alert('❌ Erreur');
+}
+},
+async saveWelcome(){
+if(!confirm('Sauvegarder la configuration Welcome ?'))return;
+const r=await this.api('/api/welcome',{method:'POST',body:JSON.stringify({welcome:this.welcome})});
+if(r&&r.success){
+alert('✅ Sauvegardé');
+this.editingWelcome=false;
+await this.load();
+}else{
+alert('❌ Erreur');
+}
+},
+async saveGoodbye(){
+if(!confirm('Sauvegarder la configuration Goodbye ?'))return;
+const r=await this.api('/api/goodbye',{method:'POST',body:JSON.stringify({goodbye:this.goodbye})});
+if(r&&r.success){
+alert('✅ Sauvegardé');
+this.editingGoodbye=false;
+await this.load();
+}else{
+alert('❌ Erreur');
+}
+}
+
+}
+}).mount('#app');
+</script>
+</body>
+</html>
+

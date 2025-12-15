@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🎵 Dashboard Musique - BAG Bot</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#111;color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;padding:20px}
+.container{max-width:1200px;margin:0 auto}
+.header{background:linear-gradient(135deg,#5865F2,#4752C4);padding:30px;border-radius:12px;margin-bottom:30px;text-align:center}
+.header h1{font-size:32px;margin-bottom:10px}
+.header p{color:#ddd;font-size:14px}
+.card{background:#222;padding:25px;border-radius:12px;margin-bottom:20px;box-shadow:0 4px 6px rgba(0,0,0,0.3)}
+.card h2{color:#5865F2;margin-bottom:20px;font-size:24px}
+button{background:#5865F2;color:white;padding:15px 30px;font-size:16px;border:none;border-radius:8px;cursor:pointer;font-weight:600;transition:all 0.2s}
+button:hover{background:#4752C4;transform:translateY(-2px)}
+button:active{transform:translateY(0)}
+.btn-danger{background:#ED4245}
+.btn-danger:hover{background:#D83C3E}
+.btn-back{background:#555;padding:10px 20px;font-size:14px}
+.btn-back:hover{background:#666}
+.upload-zone{border:3px dashed #5865F2;padding:60px 30px;border-radius:12px;background:#1a1a1a;text-align:center;transition:all 0.3s}
+.upload-zone:hover{border-color:#4752C4;background:#222}
+.upload-zone p{margin:10px 0}
+.upload-zone .icon{font-size:48px;margin-bottom:15px}
+.progress-container{margin:20px 0;display:none}
+.progress{background:#333;height:40px;border-radius:20px;overflow:hidden;box-shadow:inset 0 2px 4px rgba(0,0,0,0.3)}
+.progress-bar{background:linear-gradient(90deg,#5865F2,#57F287);height:100%;width:0%;transition:width 0.3s;display:flex;align-items:center;justify-content:center;font-weight:bold}
+#status{margin-top:15px;font-size:16px;text-align:center;font-weight:600}
+.file-list{margin-top:20px}
+.file-item{background:#1a1a1a;padding:15px;margin:10px 0;border-radius:8px;display:flex;align-items:center;justify-content:space-between;transition:all 0.2s}
+.file-item:hover{background:#252525;transform:translateX(5px)}
+.file-info{flex:1}
+.file-name{font-size:16px;font-weight:600;margin-bottom:5px}
+.file-meta{color:#888;font-size:13px}
+.playlist-item{background:#1a1a1a;padding:20px;margin:15px 0;border-radius:8px;border-left:4px solid #5865F2}
+.playlist-item h3{margin-bottom:10px}
+.playlist-item p{color:#888;font-size:14px}
+table{width:100%;border-collapse:collapse;margin-top:15px}
+th,td{padding:12px;text-align:left;border-bottom:1px solid #333}
+th{background:#1a1a1a;color:#5865F2;font-weight:600}
+tr:hover{background:#1a1a1a}
+.empty{text-align:center;color:#666;padding:40px;font-style:italic}
+@media (max-width:768px){
+.header h1{font-size:24px}
+.card{padding:15px}
+button{padding:12px 24px;font-size:14px}
+.upload-zone{padding:40px 20px}
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+<h1>🎵 Dashboard Musique</h1>
+<p>Gérez vos playlists et uploads audio pour le bot BAG</p>
+</div>
+
+<button class="btn-back" onclick="location.href='/'">← Retour au Dashboard Principal</button>
+
+<!-- PLAYLISTS -->
+<div class="card">
+<h2>📁 Playlists Personnalisées</h2>
+<div id="playlists"></div>
+</div>
+
+<!-- UPLOAD -->
+<div class="card">
+<h2>⬆️ Upload de Fichiers Audio</h2>
+<div class="upload-zone" onclick="document.getElementById('fileInput').click()">
+<div class="icon">📂</div>
+<p style="font-size:20px;font-weight:600">Cliquez pour sélectionner vos fichiers</p>
+<p style="color:#888">ou glissez-déposez vos fichiers ici</p>
+<p style="color:#666;font-size:13px;margin-top:10px">MP3, WAV, OGG, M4A, FLAC (max 50MB par fichier)</p>
+<input type="file" id="fileInput" accept="audio/*" multiple style="display:none">
+</div>
+
+<div class="progress-container" id="progressContainer">
+<div class="progress">
+<div class="progress-bar" id="progress"></div>
+</div>
+<div id="status"></div>
+</div>
+</div>
+
+
+<!-- AJOUTER LIEN YOUTUBE/SPOTIFY -->
+<div class="card">
+<h2>🔗 Ajouter un lien YouTube/Spotify</h2>
+<div style="background:#1a1a1a;padding:25px;border-radius:12px">
+  <div style="margin-bottom:20px">
+    <label style="display:block;margin-bottom:8px;color:#5865F2;font-weight:600">Lien YouTube ou Spotify</label>
+    <input type="text" id="linkInput" placeholder="https://www.youtube.com/watch?v=... ou https://open.spotify.com/track/..." style="width:100%;padding:12px;border-radius:6px;border:2px solid #333;background:#0a0a0a;color:white;font-size:14px">
+  </div>
+  
+  <div style="margin-bottom:20px">
+    <label style="display:block;margin-bottom:8px;color:#5865F2;font-weight:600">Playlist de destination</label>
+    <select id="linkPlaylistSelect" style="width:100%;padding:12px;border-radius:6px;border:2px solid #333;background:#0a0a0a;color:white">
+      <option value="">Sélectionner une playlist...</option>
+    </select>
+  </div>
+  
+  <div style="margin-bottom:20px">
+    <label style="display:block;margin-bottom:8px;color:#888;font-size:14px">ou créer une nouvelle playlist</label>
+    <input type="text" id="linkNewPlaylistName" placeholder="Nom de la nouvelle playlist" style="width:100%;padding:12px;border-radius:6px;border:2px solid #333;background:#0a0a0a;color:white">
+  </div>
+  
+  <button onclick="addLinkToPlaylist()" style="width:100%;background:linear-gradient(135deg,#5865F2,#4752C4);color:white;border:none;padding:15px;border-radius:8px;cursor:pointer;font-weight:600;font-size:16px">
+    🎵 Télécharger et ajouter à la playlist
+  </button>
+  
+  <div id="linkStatus" style="margin-top:15px;text-align:center;font-weight:600"></div>
+  
+  <div class="progress-container" id="linkProgressContainer" style="margin-top:15px;display:none">
+    <div class="progress">
+      <div class="progress-bar" id="linkProgress"></div>
+    </div>
+  </div>
+</div>
+</div>
+
+
+<!-- FICHIERS UPLOADÉS -->
+<div class="card">
+<h2>📦 Fichiers Uploadés (<span id="uploadCount">0</span>)</h2>
+<p style="color:#888;margin-bottom:15px">Taille totale: <span id="totalSize">0 MB</span></p>
+<div id="fileList"></div>
+</div>
+
+
+  <!-- Modal Ajouter à Playlist -->
+  <div id="addToPlaylistModal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.8);z-index:1000;padding:50px">
+    <div style="max-width:600px;margin:0 auto;background:#1a1a1a;border-radius:12px;padding:30px;position:relative">
+      <button onclick="closeAddModal()" style="position:absolute;top:15px;right:15px;background:none;border:none;color:#fff;font-size:24px;cursor:pointer">✕</button>
+      
+      <h2 style="margin-bottom:20px">📁 Ajouter à une playlist</h2>
+      
+      <div style="margin-bottom:20px">
+        <p style="color:#888;margin-bottom:10px">Fichier: <strong id="selectedFilename"></strong></p>
+      </div>
+      
+      <div style="margin-bottom:20px">
+        <label style="display:block;margin-bottom:8px;color:#5865F2;font-weight:600">Titre de la chanson</label>
+        <input type="text" id="trackTitle" placeholder="Titre de la chanson" style="width:100%;padding:10px;border-radius:6px;border:2px solid #333;background:#0a0a0a;color:white">
+      </div>
+      
+      <div style="margin-bottom:20px">
+        <label style="display:block;margin-bottom:8px;color:#5865F2;font-weight:600">Artiste</label>
+        <input type="text" id="trackAuthor" placeholder="Nom de l'artiste" style="width:100%;padding:10px;border-radius:6px;border:2px solid #333;background:#0a0a0a;color:white">
+      </div>
+      
+      <div style="margin-bottom:20px">
+        <label style="display:block;margin-bottom:8px;color:#5865F2;font-weight:600">Durée (ex: 3:45)</label>
+        <input type="text" id="trackDuration" placeholder="3:45" style="width:100%;padding:10px;border-radius:6px;border:2px solid #333;background:#0a0a0a;color:white">
+      </div>
+      
+      <div style="margin-bottom:20px">
+        <label style="display:block;margin-bottom:8px;color:#5865F2;font-weight:600">Playlist</label>
+        <select id="playlistSelect" style="width:100%;padding:10px;border-radius:6px;border:2px solid #333;background:#0a0a0a;color:white">
+          <option value="">Chargement...</option>
+        </select>
+      </div>
+      
+      <div style="margin-bottom:20px">
+        <label style="display:block;margin-bottom:8px;color:#888;font-size:14px">ou créer une nouvelle playlist</label>
+        <input type="text" id="newPlaylistName" placeholder="Nom de la nouvelle playlist" style="width:100%;padding:10px;border-radius:6px;border:2px solid #333;background:#0a0a0a;color:white">
+      </div>
+      
+      <div style="display:flex;gap:10px">
+        <button onclick="addToPlaylist()" style="flex:1;background:#5865F2;color:white;border:none;padding:12px;border-radius:8px;cursor:pointer;font-weight:600">✅ Ajouter</button>
+        <button onclick="closeAddModal()" style="flex:1;background:#ED4245;color:white;border:none;padding:12px;border-radius:8px;cursor:pointer;font-weight:600">❌ Annuler</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const fileInput = document.getElementById('fileInput');
+const status = document.getElementById('status');
+const progressContainer = document.getElementById('progressContainer');
+const progress = document.getElementById('progress');
+const fileList = document.getElementById('fileList');
+const playlists = document.getElementById('playlists');
+const uploadCount = document.getElementById('uploadCount');
+const totalSize = document.getElementById('totalSize');
+
+fileInput.addEventListener('change', async (e) => {
+  const files = e.target.files;
+  if (!files.length) return;
+  for (let file of files) {
+    await uploadFile(file);
+  }
+  loadFiles();
+  fileInput.value = '';
+});
+
+let uploadInProgress = false;
+
+async function uploadFile(file) {
+  if (uploadInProgress) {
+    console.log('Upload déjà en cours, annulation');
+    return;
+  }
+  
+  uploadInProgress = true;
+  console.log('🚀 Début upload:', file.name, file.size, 'bytes');
+  
+  status.textContent = `Upload de ${file.name}...`;
+  status.style.color = '#5865F2';
+  progressContainer.style.display = 'block';
+  progress.style.width = '0%';
+  progress.textContent = '0%';
+  
+  const formData = new FormData();
+  formData.append('audio', file);
+  
+  console.log('📦 FormData créé, envoi...');
+  
+  try {
+    const response = await fetch('/api/music/upload', {
+      method: 'POST',
+      body: formData
+    });
+    
+    console.log('📡 Réponse reçue:', response.status);
+    
+    const result = await response.json();
+    console.log('📄 Résultat:', result);
+    
+    if (response.ok && result.ok) {
+      progress.style.width = '100%';
+      progress.textContent = '100%';
+      status.textContent = `✅ ${file.name} uploadé avec succès !`;
+      status.style.color = '#57F287';
+      setTimeout(() => {
+        progressContainer.style.display = 'none';
+        status.textContent = '';
+      }, 2000);
+    } else {
+      status.textContent = `❌ ${result.error || 'Erreur upload'}`;
+      status.style.color = '#ED4245';
+      progressContainer.style.display = 'none';
+    }
+  } catch (error) {
+    console.error('❌ Erreur upload:', error);
+    status.textContent = `❌ Erreur: ${error.message}`;
+    status.style.color = '#ED4245';
+    progressContainer.style.display = 'none';
+  } finally {
+    uploadInProgress = false;
+    console.log('✅ Upload terminé');
+  }
+}
+
+async function renamePlaylist(guildId, name) {
+  const newName = prompt(`Nouveau nom pour la playlist "${name}" :`, name);
+  if (!newName || newName.trim() === '' || newName === name) return;
+  
+  try {
+    const response = await fetch(`/api/music/playlist/${guildId}/${encodeURIComponent(name)}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ newName: newName.trim() })
+    });
+    
+    const result = await response.json();
+    
+    if (response.ok) {
+      status.textContent = `✅ Playlist renommée en "${newName}"`;
+      status.style.color = '#57F287';
+      setTimeout(() => status.textContent = '', 3000);
+      loadFiles();
+    } else {
+      status.textContent = `❌ ${result.error || 'Erreur renommage'}`;
+      status.style.color = '#ED4245';
+    }
+  } catch (error) {
+    status.textContent = '❌ ' + error.message;
+    status.style.color = '#ED4245';
+  }
+}
+
+async function deletePlaylist(guildId, name) {
+  if (!confirm(`Supprimer la playlist "${name}" ?`)) return;
+  
+  try {
+    const response = await fetch(`/api/music/playlist/${guildId}/${encodeURIComponent(name)}`, {
+      method: 'DELETE'
+    });
+    
+    if (response.ok) {
+      status.textContent = '✅ Playlist supprimée';
+      status.style.color = '#57F287';
+      setTimeout(() => status.textContent = '', 2000);
+      loadFiles();
+    } else {
+      status.textContent = '❌ Erreur suppression playlist';
+      status.style.color = '#ED4245';
+    }
+  } catch (error) {
+    status.textContent = '❌ ' + error.message;
+    status.style.color = '#ED4245';
+  }
+}
+
+async function deleteTrack(guildId, name, trackIndex) {
+  if (!confirm(`Supprimer cette piste de la playlist ?`)) return;
+  
+  try {
+    const response = await fetch(`/api/music/playlist/${guildId}/${encodeURIComponent(name)}/track/${trackIndex}`, {
+      method: 'DELETE'
+    });
+    
+    if (response.ok) {
+      status.textContent = '✅ Piste supprimée';
+      status.style.color = '#57F287';
+      setTimeout(() => status.textContent = '', 2000);
+      loadFiles();
+    } else {
+      status.textContent = '❌ Erreur suppression piste';
+      status.style.color = '#ED4245';
+    }
+  } catch (error) {
+    status.textContent = '❌ ' + error.message;
+    status.style.color = '#ED4245';
+  }
+}
+
+
+let currentFilename = '';
+const GUILD_ID = '1360897918504271882';
+
+function openAddModal(filename) {
+  currentFilename = filename;
+  const displayName = filename.replace(/^\d+-/, '');
+  document.getElementById('selectedFilename').textContent = displayName;
+  document.getElementById('trackTitle').value = displayName.replace(/\.[^.]+$/, '');
+  document.getElementById('trackAuthor').value = '';
+  document.getElementById('trackDuration').value = '';
+  document.getElementById('newPlaylistName').value = '';
+  
+  // Charger les playlists
+  fetch('/api/music')
+    .then(r => r.json())
+    .then(data => {
+      const select = document.getElementById('playlistSelect');
+      if (data.playlists.length > 0) {
+        select.innerHTML = '<option value="">Sélectionner une playlist...</option>' +
+          data.playlists.map(p => `<option value="${p.name}">${p.name} (${p.trackCount} pistes)</option>`).join('');
+      } else {
+        select.innerHTML = '<option value="">Aucune playlist (créez-en une ci-dessous)</option>';
+      }
+    });
+  
+  document.getElementById('addToPlaylistModal').style.display = 'block';
+}
+
+function closeAddModal() {
+  document.getElementById('addToPlaylistModal').style.display = 'none';
+  currentFilename = '';
+}
+
+async function addToPlaylist() {
+  const title = document.getElementById('trackTitle').value.trim();
+  const author = document.getElementById('trackAuthor').value.trim();
+  const duration = document.getElementById('trackDuration').value.trim();
+  const selectedPlaylist = document.getElementById('playlistSelect').value;
+  const newPlaylistName = document.getElementById('newPlaylistName').value.trim();
+  
+  if (!title) {
+    status.textContent = '❌ Titre requis';
+    status.style.color = '#ED4245';
+    return;
+  }
+  
+  try {
+    let playlistName = selectedPlaylist;
+    
+    // Créer une nouvelle playlist si besoin
+    if (newPlaylistName && !selectedPlaylist) {
+      const createRes = await fetch('/api/music/playlist/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ guildId: GUILD_ID, name: newPlaylistName })
+      });
+      
+      if (!createRes.ok) {
+        const err = await createRes.json();
+        status.textContent = `❌ ${err.error}`;
+        status.style.color = '#ED4245';
+        return;
+      }
+      
+      playlistName = newPlaylistName;
+      status.textContent = `✅ Playlist "${newPlaylistName}" créée`;
+      status.style.color = '#57F287';
+    }
+    
+    if (!playlistName) {
+      status.textContent = '❌ Sélectionnez ou créez une playlist';
+      status.style.color = '#ED4245';
+      return;
+    }
+    
+    // Ajouter la piste
+    const addRes = await fetch(`/api/music/playlist/${GUILD_ID}/${encodeURIComponent(playlistName)}/add`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ filename: currentFilename, title, author, duration })
+    });
+    
+    if (addRes.ok) {
+      status.textContent = `✅ "${title}" ajouté à "${playlistName}"`;
+      status.style.color = '#57F287';
+      closeAddModal();
+      setTimeout(() => {
+        status.textContent = '';
+        loadFiles();
+      }, 2000);
+    } else {
+      const err = await addRes.json();
+      status.textContent = `❌ ${err.error}`;
+      status.style.color = '#ED4245';
+    }
+  } catch (error) {
+    status.textContent = '❌ ' + error.message;
+    status.style.color = '#ED4245';
+  }
+}
+
+async function loadFiles() {
+  try {
+    const response = await fetch('/api/music');
+    const data = await response.json();
+    
+    console.log('📊 Données reçues:', data);
+    console.log('📁 Uploads:', data.uploads);
+    
+    // Playlists avec détails
+    if (data.playlists && data.playlists.length > 0) {
+      const playlistsHtml = [];
+      
+      for (const pl of data.playlists) {
+        // Charger le détail de la playlist
+        try {
+          const detailResponse = await fetch(`/api/music/playlist/${pl.guildId}/${encodeURIComponent(pl.name)}`);
+          if (detailResponse.ok) {
+            const detail = await detailResponse.json();
+            
+            let tracksHtml = '';
+            if (detail.tracks && detail.tracks.length > 0) {
+              tracksHtml = '<div style="margin-top:15px;padding:15px;background:#111;border-radius:8px">' +
+                '<h4 style="color:#5865F2;margin-bottom:10px">🎵 Pistes:</h4>' +
+                detail.tracks.map((t, i) => `
+                  <div style="padding:8px 0;border-bottom:1px solid #222;color:#ddd;display:flex;justify-content:space-between;align-items:center">
+                    <div>
+                      <span style="color:#5865F2;font-weight:600">${i+1}.</span> 
+                      ${t.title || 'Sans titre'} 
+                      ${t.author ? '<span style="color:#888"> - ' + t.author + '</span>' : ''}
+                      ${t.duration ? '<span style="color:#888"> (' + t.duration + ')</span>' : ''}
+                    </div>
+                    <button onclick="deleteTrack('${detail.guildId}', '${detail.name}', ${i})" style="background:#ED4245;color:white;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px">🗑️</button>
+                  </div>
+                `).join('') + '</div>';
+            }
+            
+            playlistsHtml.push(`
+              <div class="playlist-item">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+                  <h3 style="margin:0">📁 ${detail.name}</h3>
+                  <div>
+                    <button class="btn-primary" onclick="renamePlaylist('${detail.guildId}', '${detail.name}')" style="padding:8px 15px;font-size:14px;margin-right:8px">✏️ Renommer</button>
+                    <button class="btn-danger" onclick="deletePlaylist('${detail.guildId}', '${detail.name}')" style="padding:8px 15px;font-size:14px">🗑️ Supprimer</button>
+                  </div>
+                </div>
+                <p style="color:#888">🎵 ${detail.tracks ? detail.tracks.length : 0} pistes</p>
+                ${tracksHtml}
+              </div>
+            `);
+          }
+        } catch (e) {
+          console.error('Erreur chargement détails playlist:', e);
+          playlistsHtml.push(`
+            <div class="playlist-item">
+              <h3>📁 ${pl.name}</h3>
+              <p>🎵 ${pl.trackCount} pistes</p>
+            </div>
+          `);
+        }
+      }
+      
+      // Charger aussi dans le select pour les liens
+    const linkPlaylistSelect = document.getElementById('linkPlaylistSelect');
+    if (linkPlaylistSelect && data.playlists.length > 0) {
+      linkPlaylistSelect.innerHTML = '<option value="">Sélectionner une playlist...</option>' +
+        data.playlists.map(p => `<option value="${p.name}">${p.name} (${p.trackCount} pistes)</option>`).join('');
+    }
+    
+    playlists.innerHTML = playlistsHtml.join('');
+    } else {
+      playlists.innerHTML = '<div class="empty">Aucune playlist créée</div>';
+    }
+    
+    // Fichiers uploadés
+    uploadCount.textContent = data.uploads ? data.uploads.length : 0;
+    const total = data.totalSize || 0;
+    totalSize.textContent = (total / 1024 / 1024).toFixed(2) + ' MB';
+    
+    console.log('📊 Affichage fichiers - Count:', data.uploads ? data.uploads.length : 0, 'Total:', total);
+    
+    if (data.uploads && data.uploads.length > 0) {
+      console.log('✅ Génération HTML pour', data.uploads.length, 'fichiers');
+      fileList.innerHTML = data.uploads.map(file => {
+        const displayName = file.filename.replace(/^\d+-/, '');
+        const size = (file.size / 1024 / 1024).toFixed(2);
+        const date = new Date(file.uploadedAt).toLocaleString('fr-FR');
+        return `
+          <div class="file-item">
+            <div class="file-info">
+              <div class="file-name">🎵 ${displayName}</div>
+              <div class="file-meta">${size} MB • ${date}</div>
+            </div>
+            <div style="display:flex;gap:8px">
+              <button class="btn-primary" onclick="openAddModal('${file.filename}')" style="padding:8px 15px">📁 Ajouter à playlist</button>
+              <button class="btn-danger" onclick="deleteFile('${file.filename}')">🗑️ Supprimer</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+      console.log('✅ HTML inséré dans fileList');
+    } else {
+      console.log('❌ Aucun fichier détecté, affichage message vide');
+      fileList.innerHTML = '<div class="empty">Aucun fichier uploadé</div>';
+    }
+  } catch (error) {
+    console.error('❌ Erreur chargement:', error);
+    status.textContent = '❌ Erreur chargement: ' + error.message;
+    status.style.color = '#ED4245';
+  }
+}
+
+async function deleteFile(filename) {
+  if (!confirm('Supprimer ' + filename.replace(/^\d+-/, '') + ' ?')) return;
+  
+  try {
+    const response = await fetch('/api/music/upload/' + encodeURIComponent(filename), {
+      method: 'DELETE'
+    });
+    
+    if (response.ok) {
+      status.textContent = '✅ Fichier supprimé';
+      status.style.color = '#57F287';
+      setTimeout(() => status.textContent = '', 2000);
+      loadFiles();
+    } else {
+      status.textContent = '❌ Erreur lors de la suppression';
+      status.style.color = '#ED4245';
+    }
+  } catch (error) {
+    status.textContent = '❌ ' + error.message;
+    status.style.color = '#ED4245';
+  }
+}
+
+// Drag & Drop
+const uploadZone = document.querySelector('.upload-zone');
+uploadZone.addEventListener('dragover', (e) => {
+  e.preventDefault();
+  uploadZone.style.borderColor = '#57F287';
+  uploadZone.style.background = '#252525';
+});
+
+uploadZone.addEventListener('dragleave', () => {
+  uploadZone.style.borderColor = '#5865F2';
+  uploadZone.style.background = '#1a1a1a';
+});
+
+uploadZone.addEventListener('drop', async (e) => {
+  e.preventDefault();
+  uploadZone.style.borderColor = '#5865F2';
+  uploadZone.style.background = '#1a1a1a';
+  
+  const files = e.dataTransfer.files;
+  if (files.length) {
+    for (let file of files) {
+      await uploadFile(file);
+    }
+    loadFiles();
+  }
+});
+
+
+
+async function addLinkToPlaylist() {
+  const link = document.getElementById('linkInput').value.trim();
+  const selectedPlaylist = document.getElementById('linkPlaylistSelect').value;
+  const newPlaylistName = document.getElementById('linkNewPlaylistName').value.trim();
+  const linkStatus = document.getElementById('linkStatus');
+  const linkProgressContainer = document.getElementById('linkProgressContainer');
+  const linkProgress = document.getElementById('linkProgress');
+  
+  if (!link) {
+    linkStatus.textContent = '❌ Veuillez entrer un lien';
+    linkStatus.style.color = '#ED4245';
+    return;
+  }
+  
+  // Vérifier que c'est un lien YouTube ou Spotify
+  if (!link.includes('youtube.com') && !link.includes('youtu.be') && !link.includes('spotify.com')) {
+    linkStatus.textContent = '❌ Lien invalide (YouTube ou Spotify uniquement)';
+    linkStatus.style.color = '#ED4245';
+    return;
+  }
+  
+  if (!selectedPlaylist && !newPlaylistName) {
+    linkStatus.textContent = '❌ Sélectionnez ou créez une playlist';
+    linkStatus.style.color = '#ED4245';
+    return;
+  }
+  
+  try {
+    linkStatus.textContent = '⏳ Téléchargement en cours...';
+    linkStatus.style.color = '#5865F2';
+    linkProgressContainer.style.display = 'block';
+    linkProgress.style.width = '30%';
+    linkProgress.textContent = '30%';
+    
+    let playlistName = selectedPlaylist;
+    
+    // Créer une nouvelle playlist si besoin
+    if (newPlaylistName && !selectedPlaylist) {
+      const createRes = await fetch('/api/music/playlist/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ guildId: GUILD_ID, name: newPlaylistName })
+      });
+      
+      if (!createRes.ok) {
+        const err = await createRes.json();
+        linkStatus.textContent = `❌ ${err.error}`;
+        linkStatus.style.color = '#ED4245';
+        linkProgressContainer.style.display = 'none';
+        return;
+      }
+      
+      playlistName = newPlaylistName;
+      linkProgress.style.width = '50%';
+      linkProgress.textContent = '50%';
+    }
+    
+    // Envoyer le lien au serveur pour téléchargement
+    const response = await fetch('/api/music/add-link', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ 
+        link: link, 
+        playlistName: playlistName,
+        guildId: GUILD_ID
+      })
+    });
+    
+    linkProgress.style.width = '80%';
+    linkProgress.textContent = '80%';
+    
+    const result = await response.json();
+    
+    if (response.ok) {
+      linkProgress.style.width = '100%';
+      linkProgress.textContent = '100%';
+      linkStatus.textContent = `✅ ${result.title || 'Vidéo'} ajoutée à ${playlistName}`;
+      linkStatus.style.color = '#57F287';
+      
+      // Réinitialiser le formulaire
+      document.getElementById('linkInput').value = '';
+      document.getElementById('linkNewPlaylistName').value = '';
+      
+      setTimeout(() => {
+        linkStatus.textContent = '';
+        linkProgressContainer.style.display = 'none';
+        loadFiles();
+      }, 3000);
+    } else {
+      linkStatus.textContent = `❌ ${result.error || 'Erreur lors du téléchargement'}`;
+      linkStatus.style.color = '#ED4245';
+      linkProgressContainer.style.display = 'none';
+    }
+  } catch (error) {
+    linkStatus.textContent = '❌ ' + error.message;
+    linkStatus.style.color = '#ED4245';
+    linkProgressContainer.style.display = 'none';
+  }
+}
+
+
+// Charger au démarrage
+loadFiles();
+</script>
+</body>
+</html>

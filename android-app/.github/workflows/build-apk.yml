@@ -1,0 +1,54 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up JDK 17
+      uses: actions/setup-java@v3
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+        
+    - name: Setup Android SDK
+      uses: android-actions/setup-android@v2
+      
+    - name: Grant execute permission for gradlew
+      run: chmod +x gradlew
+      
+    - name: Create keystore
+      run: |
+        keytool -genkey -v -keystore keystore/bagbot-release.jks \
+          -alias bagbot \
+          -keyalg RSA \
+          -keysize 2048 \
+          -validity 10000 \
+          -storepass bagbot123 \
+          -keypass bagbot123 \
+          -dname "CN=BagBot, OU=Mobile, O=BagBot, L=Paris, ST=IDF, C=FR"
+    
+    - name: Create keystore.properties
+      run: |
+        cat > keystore.properties << EOF
+        storeFile=keystore/bagbot-release.jks
+        storePassword=bagbot123
+        keyAlias=bagbot
+        keyPassword=bagbot123
+        EOF
+    
+    - name: Build Release APK
+      run: ./gradlew assembleRelease
+      
+    - name: Upload APK
+      uses: actions/upload-artifact@v3
+      with:
+        name: bagbot-manager-release
+        path: app/build/outputs/apk/release/app-release.apk

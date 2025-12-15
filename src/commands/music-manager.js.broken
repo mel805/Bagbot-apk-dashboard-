@@ -1,0 +1,683 @@
+// Système de musique avec répétition et connexion permanente
+const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+const {
+  joinVoiceChannel,
+  createAudioPlayer,
+  createAudioResource,
+  AudioPlayerStatus,
+  VoiceConnectionStatus,
+  StreamType,
+  NoSubscriberBehavior
+} = require('@discordjs/voice');
+const { spawn } = require('child_process');
+const fs = require('fs');
+const path = require('path');
+
+const YOUTUBE_COOKIES = '/home/bagbot/youtube_cookies.txt';
+
+const YTDLP_PATH = '/home/bagbot/yt-dlp';
+const FFMPEG_PATH = require('ffmpeg-static');
+
+class CustomMusicManager {
+  constructor(client) {
+    this.client = client;
+    this.queues = new Map();
+    
+    this.playlistsPath = path.join(__dirname, '../data/playlists');
+    this.uploadsPath = path.join(__dirname, '../../data/uploads');
+    
+    if (!fs.existsSync(this.playlistsPath)) fs.mkdirSync(this.playlistsPath, { recursive: true });
+    if (!fs.existsSync(this.uploadsPath)) fs.mkdirSync(this.uploadsPath, { recursive: true });
+    
+    console.log('[CustomMusic] ✅ Système musique initialisé (avec répétition + connexion 24/7)');
+    
+    this.client.on('interactionCreate', async interaction => {
+      if (!interaction.isButton()) return;
+      if (!interaction.customId.startsWith('music_')) return;
+      await this.handleButton(interaction);
+    });
+  }
+  
+  getQueue(guildId) {
+    if (!this.queues.has(guildId)) {
+      this.queues.set(guildId, {
+        tracks: [],
+        current: null,
+        connection: null,
+        player: null,
+        channel: null,
+        volume: 80,
+        playerMessage: null,
+        repeatMode: 'off', // 'off', 'queue', 'one'
+        originalQueue: [] // Pour repeat queue
+      });
+    }
+    return this.queues.get(guildId);
+  }
+  
+  async searchYouTube(query) {
+    return new Promise((resolve, reject) => {
+      const isUrl = query.startsWith('http://') || query.startsWith('https://');
+      const searchQuery = isUrl ? query : `ytsearch1:${query}`;
+      
+      console.log('[YouTube] Recherche avec cookies:', searchQuery);
+      
+      // Timeout de 30 secondes
+      const ytdlp = spawn(YTDLP_PATH, [
+        
+        "--cookies", YOUTUBE_COOKIES,
+        '--print', '%(title)s',
+        '--print', '%(id)s',
+        '--no-warnings',
+        '--playlist-end', '1',
+        searchQuery
+      ]);
+      
+      let output = '';
+      let errorOutput = '';
+      
+      // Timeout de 30 secondes (APRÈS le spawn)
+      const timeoutId = setTimeout(() => {
+        console.log("[YouTube] ⚠️ Déclenchement timeout 45s...");
+        console.error('[YouTube] ❌ Timeout après 45s');
+        ytdlp.kill();
+        reject(new Error('Recherche timeout (>45s)'));
+      }, 45000);
+      
+      ytdlp.stdout.on('data', (data) => {
+        output += data.toString();
+      });
+      
+      ytdlp.stderr.on('data', (data) => {
+        errorOutput += data.toString();
+      });
+      
+      ytdlp.on('close', (code) => {
+        clearTimeout(timeoutId);
+        console.log('[YouTube] yt-dlp terminé avec code:', code);
+        console.log('[YouTube] Output brut:', JSON.stringify(output));
+        console.log('[YouTube] Output length:', output.length);
+        
+        if (errorOutput) {
+          console.error('[YouTube] Erreurs stderr:', errorOutput);
+        }
+        
+        if (code !== 0 && code !== null) {
+          return reject(new Error('Recherche échouée (code ' + code + ') - ' + (errorOutput || 'Aucun détail')));
+        }
+        
+        const lines = output.trim().split('\n').filter(l => l.trim());
+        console.log('[YouTube] Lignes parsées:', lines.length, '-', JSON.stringify(lines.slice(0, 4)));
+        
+        if (lines.length < 2) {
+          return reject(new Error('Aucun résultat - seulement ' + lines.length + ' ligne(s)'));
+        }
+        
+        // Prendre UNIQUEMENT les 2 premières lignes (titre et ID du premier résultat)
+        const title = lines[0].trim();
+        const videoId = lines[1].trim();
+        
+        console.log('[YouTube] ✅ Trouvé:', title, '-', videoId);
+        
+        resolve({
+          title,
+          author: 'YouTube',
+          url: `https://www.youtube.com/watch?v=${videoId}`,
+          duration: '0:00',
+          thumbnail: ''
+        });
+      });
+      
+      ytdlp.on('error', (err) => {
+        clearTimeout(timeoutId);
+        console.error('[YouTube] ❌ Erreur spawn:', err.message);
+        reject(err);
+      });
+    });
+  }
+
+  async play(interaction, query, alreadyDeferred = false) {
+    try {
+      const member = interaction.member;
+      const voiceChannel = member.voice.channel;
+      
+      if (!voiceChannel) {
+        return interaction.reply({ 
+          content: '❌ Vous devez être dans un salon vocal !', 
+          ephemeral: true 
+        });
+      }
+      
+      // Ne defer que si ce n'est pas déjà fait
+      if (!alreadyDeferred && !interaction.deferred) {
+        await interaction.deferReply();
+      }
+      
+      console.log('[CustomMusic] Query:', query);
+      
+      let track;
+      
+      try {
+        const result = await this.searchYouTube(query);
+        track = {
+          ...result,
+          requestedBy: interaction.user
+        };
+        console.log('[CustomMusic] ✅ Trouvé:', track.title);
+      } catch (error) {
+        console.error('[CustomMusic] Erreur recherche:', error.message);
+        if (interaction.deferred) {
+          return interaction.editReply('❌ Impossible de trouver: ' + query);
+        } else {
+          return interaction.reply({ content: '❌ Impossible de trouver: ' + query, ephemeral: true });
+        }
+      }
+      
+      const queue = this.getQueue(interaction.guild.id);
+      queue.tracks.push(track);
+      queue.channel = interaction.channel;
+      
+      if (!queue.current) {
+        await this.processQueue(interaction.guild, voiceChannel);
+        if (interaction.deferred) {
+          return interaction.editReply('🎵 Lecture démarrée !');
+        } else {
+          return interaction.reply('🎵 Lecture démarrée !');
+        }
+      } else {
+        const response = `✅ **Ajouté à la file (#${queue.tracks.length}):** ${track.title}`;
+        if (interaction.deferred) {
+          return interaction.editReply(response);
+        } else {
+          return interaction.reply(response);
+        }
+      }
+      
+    } catch (error) {
+      console.error('[CustomMusic] Erreur play:', error);
+      const errorMsg = { content: '❌ Erreur: ' + error.message };
+      if (interaction.deferred) {
+        return interaction.editReply(errorMsg);
+      } else {
+        return interaction.reply({ ...errorMsg, ephemeral: true });
+      }
+    }
+  }
+  async processQueue(guild, voiceChannel) {
+    const queue = this.getQueue(guild.id);
+    
+    if (queue.tracks.length === 0 && queue.repeatMode === 'off') {
+      queue.current = null;
+      console.log('[CustomMusic] File vide, mais reste connecté 24/7');
+      
+      if (queue.playerMessage) {
+        const embed = new EmbedBuilder()
+          .setColor(0x00FF00)
+          
+          .setThumbnail(guild.iconURL())
+          
+          ;
+        
+        await queue.playerMessage.edit({ embeds: [embed], components: [] }).catch(() => {});
+      }
+      
+      // NE PAS déconnecter - rester 24/7
+      return;
+    }
+    
+    // Gestion de la répétition
+    if (queue.tracks.length === 0 && queue.repeatMode === 'queue' && queue.originalQueue.length > 0) {
+      console.log('[CustomMusic] 🔁 Répétition de la file');
+      queue.tracks = [...queue.originalQueue];
+    }
+    
+    if (queue.repeatMode === 'one' && queue.current) {
+      console.log('[CustomMusic] 🔂 Répétition de la musique actuelle');
+      // Rejouer la même musique
+    } else if (queue.tracks.length > 0) {
+      queue.current = queue.tracks.shift();
+      console.log('[CustomMusic] Lecture:', queue.current.title);
+      console.log('[CustomMusic] File restante:', queue.tracks.length);
+      
+      // Sauvegarder la queue originale pour repeat
+      if (queue.repeatMode === 'queue' && queue.originalQueue.length === 0) {
+        queue.originalQueue = [queue.current, ...queue.tracks];
+      }
+    } else if (!queue.current) {
+      return; // Rien à jouer
+    }
+    
+    // Vérifier si la connexion existe ET est valide
+    const isConnectionValid = queue.connection && 
+                             queue.connection.state && 
+                             queue.connection.state.status !== VoiceConnectionStatus.Destroyed &&
+                             queue.connection.state.status !== VoiceConnectionStatus.Disconnected;
+    
+    if (!isConnectionValid) {
+      console.log('[CustomMusic] Création/recréation de la connexion vocale...');
+      
+      // Détruire l'ancienne connexion si elle existe
+      if (queue.connection) {
+        try {
+          queue.connection.destroy();
+        } catch (e) {}
+      }
+      
+      queue.connection = joinVoiceChannel({
+        channelId: voiceChannel.id,
+        guildId: guild.id,
+        adapterCreator: guild.voiceAdapterCreator
+      });
+      
+      queue.player = createAudioPlayer({
+        behaviors: {
+          noSubscriber: NoSubscriberBehavior.Play
+        }
+      });
+      
+      queue.connection.subscribe(queue.player);
+      queue.voiceChannel = voiceChannel;
+      
+      queue.player.on(AudioPlayerStatus.Idle, () => {
+        console.log('[CustomMusic] Piste terminée');
+        this.processQueue(guild, voiceChannel);
+      });
+      
+      queue.player.on('error', error => {
+        console.error('[CustomMusic] ❌ Erreur player:', error);
+        queue.channel?.send('❌ Erreur de lecture');
+        this.processQueue(guild, voiceChannel);
+      });
+      
+      console.log('[CustomMusic] ✅ Connecté 24/7 au salon vocal');
+    } else {
+      console.log('[CustomMusic] Connexion vocale déjà active');
+    }
+    try {
+      // Vérifier si c'est un fichier local ou YouTube
+      if (queue.current.isLocal && queue.current.localPath) {
+        console.log('[CustomMusic] Lecture fichier local:', queue.current.localPath);
+        
+        if (!fs.existsSync(queue.current.localPath)) {
+          throw new Error('Fichier introuvable: ' + queue.current.localPath);
+        }
+        
+        // Streamer le fichier local directement avec FFmpeg
+        const ffmpegProcess = spawn(FFMPEG_PATH, [
+          '-i', queue.current.localPath,
+          '-analyzeduration', '0',
+          '-loglevel', '0',
+          '-f', 's16le',
+          '-ar', '48000',
+          '-ac', '2',
+          'pipe:1'
+        ], {
+          stdio: ['pipe', 'pipe', 'pipe']
+        });
+        
+        ffmpegProcess.on('error', (err) => {
+          console.error('[CustomMusic] ❌ Erreur FFmpeg local:', err);
+        });
+        
+        const resource = createAudioResource(ffmpegProcess.stdout, {
+          inputType: StreamType.Raw,
+          inlineVolume: true
+        });
+        
+        resource.volume.setVolume(queue.volume / 100);
+        queue.player.play(resource);
+        
+        console.log('[CustomMusic] ✅ Lecture fichier local démarrée');
+        
+      } else {
+        console.log('[CustomMusic] Streaming YouTube:', queue.current.url);
+        
+        const ytdlpProcess = spawn(YTDLP_PATH, [
+          
+          '-f', 'bestaudio',
+          '-o', '-',
+          queue.current.url
+        ]);
+      
+      const ffmpegProcess = spawn(FFMPEG_PATH, [
+        '-i', 'pipe:0',
+        '-analyzeduration', '0',
+        '-loglevel', '0',
+        '-f', 's16le',
+        '-ar', '48000',
+        '-ac', '2',
+        'pipe:1'
+      ], {
+        stdio: ['pipe', 'pipe', 'pipe']
+      });
+      
+        ytdlpProcess.stdout.pipe(ffmpegProcess.stdin);
+        
+        const resource = createAudioResource(ffmpegProcess.stdout, {
+          inputType: StreamType.Raw,
+          inlineVolume: true
+        });
+        
+        resource.volume.setVolume(queue.volume / 100);
+        queue.player.play(resource);
+        
+        console.log('[CustomMusic] ✅ Lecture YouTube démarrée');
+        
+        // Afficher le lecteur
+        console.log("[MUSIC-YouTube] ⚠️ Appel displayPlayer dans bloc YouTube...");
+        await this.displayPlayer(guild, queue);
+        console.log("[MUSIC-YouTube] ✅ displayPlayer terminé");
+      }
+      
+      console.log("[MUSIC] ⚠️ Appel displayPlayer...");
+      await this.displayPlayer(guild, queue);
+      console.log("[MUSIC] ✅ displayPlayer terminé");
+      
+    } catch (error) {
+      console.error('[CustomMusic] ❌ Erreur:', error);
+      queue.channel?.send('❌ Erreur lors de la lecture de: ' + queue.current.title);
+      this.processQueue(guild, voiceChannel);
+    }
+  }
+  
+  async displayPlayer(guild, queue) {
+    console.log("[DisplayPlayer] 🎨 DÉBUT CRÉATION LECTEUR COMPACT");
+    if (!queue.channel) return;
+    
+    let repeatIcon = '';
+    if (queue.repeatMode === 'queue') repeatIcon = '🔁 ';
+    if (queue.repeatMode === 'one') repeatIcon = '🔂 ';
+    
+    // Design COMPACT style Spotify
+    const embed = new EmbedBuilder()
+      .setColor(0x1DB954) // Vert Spotify
+      .setDescription(
+        `${repeatIcon}**${queue.current?.title || 'Aucune musique'}**\n\n` +
+        `▬▬▬▬🔘▬▬▬▬▬▬▬\n` +
+        `⏱️ ${queue.current?.duration || '0:00'}  •  🔊 ${queue.volume}%  •  📋 ${queue.tracks.length}`
+      )
+      .setThumbnail(guild.iconURL({ size: 128 }))
+      .setFooter({ text: 'Lecteur Audio' });
+    
+    const row1 = new ActionRowBuilder()
+      .addComponents(
+        new ButtonBuilder()
+          .setCustomId('music_pause')
+          .setEmoji('⏸️')
+          .setLabel('Pause')
+          .setStyle(ButtonStyle.Primary),
+        new ButtonBuilder()
+          .setCustomId('music_skip')
+          .setEmoji('⏭️')
+          .setLabel('Skip')
+          .setStyle(ButtonStyle.Primary),
+        new ButtonBuilder()
+          .setCustomId('music_stop')
+          .setEmoji('⏹️')
+          .setLabel('Stop')
+          .setStyle(ButtonStyle.Danger),
+        new ButtonBuilder()
+          .setCustomId('music_volumedown')
+          .setEmoji('🔉')
+          .setLabel('-10%')
+          .setStyle(ButtonStyle.Secondary),
+        new ButtonBuilder()
+          .setCustomId('music_volumeup')
+          .setEmoji('🔊')
+          .setLabel('+10%')
+          .setStyle(ButtonStyle.Secondary)
+      );
+    
+    const row2 = new ActionRowBuilder()
+      .addComponents(
+        new ButtonBuilder()
+          .setCustomId('music_repeatone')
+          .setEmoji('🔂')
+          .setLabel('Répéter 1')
+          .setStyle(queue.repeatMode === 'one' ? ButtonStyle.Success : ButtonStyle.Secondary),
+        new ButtonBuilder()
+          .setCustomId('music_repeatqueue')
+          .setEmoji('🔁')
+          .setLabel('Répéter file')
+          .setStyle(queue.repeatMode === 'queue' ? ButtonStyle.Success : ButtonStyle.Secondary)
+      );
+    
+    if (queue.playerMessage) {
+      try {
+        await queue.playerMessage.delete();
+      } catch (e) {}
+    }
+    
+    queue.playerMessage = await queue.channel.send({ 
+      embeds: [embed], 
+      components: [row1, row2] 
+    });
+  }
+  
+  async handleButton(interaction) {
+    const queue = this.getQueue(interaction.guild.id);
+    const action = interaction.customId.replace('music_', '');
+    
+    if (!queue.player && action !== 'repeatone' && action !== 'repeatqueue') {
+      return interaction.reply({ 
+        content: '❌ Aucune musique en cours !', 
+        ephemeral: true 
+      });
+    }
+    
+    switch (action) {
+      case 'pause':
+        if (queue.player.state.status === AudioPlayerStatus.Playing) {
+          queue.player.pause();
+          await interaction.reply({ content: '⏸️ **Pause**', ephemeral: true });
+        } else {
+          queue.player.unpause();
+          await interaction.reply({ content: '▶️ **Reprise**', ephemeral: true });
+        }
+        break;
+        
+      case 'skip':
+        queue.player.stop();
+        await interaction.reply({ content: '⏭️ **Musique suivante**', ephemeral: true });
+        break;
+        
+      case 'stop':
+        queue.tracks = [];
+        queue.originalQueue = [];
+        queue.current = null;
+        queue.repeatMode = 'off';
+        queue.player.stop();
+        await interaction.reply({ content: '⏹️ **Arrêté (bot reste connecté)**', ephemeral: true });
+        break;
+        
+      case 'volumedown':
+        queue.volume = Math.max(0, queue.volume - 10);
+        if (queue.player?.state?.resource?.volume) {
+          queue.player.state.resource.volume.setVolume(queue.volume / 100);
+          console.log(`[Volume] Baissé à ${queue.volume}%`);
+        } else {
+          console.warn('[Volume] Resource volume non disponible');
+        }
+        await interaction.reply({ content: `🔉 Volume: ${queue.volume}%`, ephemeral: true });
+        await this.updatePlayerEmbed(interaction.guild, queue);
+        break;
+        
+      case 'volumeup':
+        queue.volume = Math.min(200, queue.volume + 10);
+        if (queue.player?.state?.resource?.volume) {
+          queue.player.state.resource.volume.setVolume(queue.volume / 100);
+          console.log(`[Volume] Augmenté à ${queue.volume}%`);
+        } else {
+          console.warn('[Volume] Resource volume non disponible');
+        }
+        await interaction.reply({ content: `🔊 Volume: ${queue.volume}%`, ephemeral: true });
+        await this.updatePlayerEmbed(interaction.guild, queue);
+        break;
+        
+      case 'repeatone':
+        if (queue.repeatMode === 'one') {
+          queue.repeatMode = 'off';
+          await interaction.reply({ content: '🔂 **Répétition désactivée**', ephemeral: true });
+        } else {
+          queue.repeatMode = 'one';
+          queue.originalQueue = [];
+          await interaction.reply({ content: '🔂 **Répétition d\'une musique activée**', ephemeral: true });
+        }
+        await this.updatePlayerEmbed(interaction.guild, queue);
+        break;
+        
+      case 'repeatqueue':
+        if (queue.repeatMode === 'queue') {
+          queue.repeatMode = 'off';
+          queue.originalQueue = [];
+          await interaction.reply({ content: '🔁 **Répétition désactivée**', ephemeral: true });
+        } else {
+          queue.repeatMode = 'queue';
+          queue.originalQueue = queue.current ? [queue.current, ...queue.tracks] : [...queue.tracks];
+          await interaction.reply({ content: '🔁 **Répétition de la file activée**', ephemeral: true });
+        }
+        await this.updatePlayerEmbed(interaction.guild, queue);
+        break;
+    }
+  }
+  
+    async updatePlayerEmbed(guild, queue) {
+    if (!queue.playerMessage || !queue.current) return;
+    
+    let repeatIcon = '';
+    if (queue.repeatMode === 'queue') repeatIcon = '🔁 ';
+    if (queue.repeatMode === 'one') repeatIcon = '🔂 ';
+    
+    // Recréer l'embed COMPACT (même design que displayPlayer)
+    const embed = new EmbedBuilder()
+      .setColor(0x1DB954) // Vert Spotify
+      .setDescription(
+        `${repeatIcon}**${queue.current?.title || 'Aucune musique'}**
+
+` +
+        `▬▬▬▬🔘▬▬▬▬▬▬▬
+` +
+        `⏱️ ${queue.current?.duration || '0:00'}  •  🔊 ${queue.volume}%  •  📋 ${queue.tracks.length}`
+      )
+      .setThumbnail(guild.iconURL({ size: 128 }))
+      .setFooter({ text: 'Lecteur Audio' });
+    
+    // Mettre à jour les boutons de répétition
+    const row2 = ActionRowBuilder.from(queue.playerMessage.components[1]);
+    row2.components[0].setStyle(queue.repeatMode === 'one' ? ButtonStyle.Success : ButtonStyle.Secondary);
+    row2.components[1].setStyle(queue.repeatMode === 'queue' ? ButtonStyle.Success : ButtonStyle.Secondary);
+    
+    try {
+      await queue.playerMessage.edit({ 
+        embeds: [embed],
+        components: [queue.playerMessage.components[0], row2]
+      });
+    } catch (e) {
+      console.error('[UpdatePlayer] ❌ Erreur lors de la mise à jour:', e.message);
+    }
+  }
+  
+  async pause(interaction) {
+    const queue = this.getQueue(interaction.guild.id);
+    if (!queue.player) {
+      return interaction.reply({ content: '❌ Aucune musique en cours !', ephemeral: true });
+    }
+    queue.player.pause();
+    return interaction.reply('⏸️ **Lecture mise en pause**');
+  }
+  
+  async resume(interaction) {
+    const queue = this.getQueue(interaction.guild.id);
+    if (!queue.player) {
+      return interaction.reply({ content: '❌ Aucune musique en cours !', ephemeral: true });
+    }
+    queue.player.unpause();
+    return interaction.reply('▶️ **Lecture reprise**');
+  }
+  
+  async skip(interaction) {
+    const queue = this.getQueue(interaction.guild.id);
+    if (!queue.player || !queue.current) {
+      return interaction.reply({ content: '❌ Aucune musique en cours !', ephemeral: true });
+    }
+    const current = queue.current;
+    queue.player.stop();
+    return interaction.reply(`⏭️ **Musique passée:** ${current.title}`);
+  }
+  
+  async stop(interaction) {
+    const queue = this.getQueue(interaction.guild.id);
+    if (!queue.connection) {
+      return interaction.reply({ content: '❌ Aucune musique en cours !', ephemeral: true });
+    }
+    queue.tracks = [];
+    queue.originalQueue = [];
+    queue.current = null;
+    queue.repeatMode = 'off';
+    queue.player.stop();
+    return interaction.reply('⏹️ **Lecture arrêtée (bot reste connecté 24/7)**');
+  }
+  
+  async queue(interaction) {
+    const queue = this.getQueue(interaction.guild.id);
+    if (!queue.current) {
+      return interaction.reply({ content: '❌ Aucune musique en cours !', ephemeral: true });
+    }
+    
+    const embed = new EmbedBuilder()
+      .setColor(0xE91E63)
+      
+      .setThumbnail(interaction.guild.iconURL())
+      
+      ;
+    
+    if (queue.tracks.length > 0) {
+      const queueList = queue.tracks.slice(0, 10).map((track, i) => 
+        `${i + 1}. ${track.title} - ${track.duration}`
+      ).join('\n');
+      
+      embed.addFields([{ name: '📋 Suivant(s)', value: queueList }]);
+    }
+    
+    return interaction.reply({ embeds: [embed] });
+  }
+  
+  formatDuration(seconds) {
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const s = seconds % 60;
+    
+    if (h > 0) return `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+    return `${m}:${s.toString().padStart(2, '0')}`;
+  }
+
+  // Méthode pour jouer des fichiers locaux (playlists personnalisées)
+  async playLocal(interaction, track, voiceChannel, isFirst = false) {
+    const uploadsPath = path.join(__dirname, '../../data/uploads');
+    const queue = this.getQueue(interaction.guild.id);
+    
+    // Créer l'objet track avec le chemin local
+    const localTrack = {
+      title: track.title || track.filename || 'Musique locale',
+      author: track.author || 'Playlist personnalisée',
+      url: null, // Pas d'URL
+      localPath: path.join(uploadsPath, track.filename),
+      duration: track.duration || '?:??',
+      thumbnail: track.thumbnail || null,
+      requestedBy: interaction.user,
+      isLocal: true
+    };
+    
+    queue.tracks.push(localTrack);
+    queue.channel = interaction.channel;
+    
+    if (!queue.current && isFirst) {
+      await this.processQueue(interaction.guild, voiceChannel);
+    }
+  }
+
+}
+
+
+
+module.exports = { CustomMusicManager };

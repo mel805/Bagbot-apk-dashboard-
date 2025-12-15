@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Diagnostic v-show</title>
+<script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:sans-serif;background:#111;color:#fff;padding:20px}
+.card{background:#222;padding:20px;border-radius:12px;margin:20px 0}
+button{padding:12px 24px;margin:5px;border-radius:8px;border:none;cursor:pointer;font-weight:600;font-size:16px}
+.btn-d{background:#5865F2;color:white}
+.btn-eco{background:#57F287;color:#000}
+.btn-niv{background:#FFA500;color:#000}
+button:hover{opacity:0.8}
+.section{border:3px solid;padding:20px;margin:10px 0;border-radius:12px}
+.section h2{margin-bottom:10px}
+.debug{background:#000;padding:15px;border-radius:8px;font-family:monospace;font-size:14px}
+</style>
+</head>
+<body>
+<div id="app">
+<h1 style="margin-bottom:20px">🔍 Diagnostic v-show Dashboard</h1>
+
+<div class="card">
+<h3>État de Vue.js</h3>
+<div class="debug">
+<div>✅ Vue chargé: {{ vueLoaded ? 'OUI' : 'NON' }}</div>
+<div>✅ App montée: {{ appMounted ? 'OUI' : 'NON' }}</div>
+<div>📍 Section active: <strong style="color:#57F287">{{ v }}</strong></div>
+<div>📱 Mode: {{ isMobile ? 'MOBILE' : 'DESKTOP' }}</div>
+</div>
+</div>
+
+<div class="card">
+<h3>Navigation</h3>
+<button class="btn-d" @click="v='d'">🏠 Dashboard (d)</button>
+<button class="btn-eco" @click="v='eco'">💰 Économie (eco)</button>
+<button class="btn-niv" @click="v='niv'">⭐ Niveaux (niv)</button>
+</div>
+
+<div class="card">
+<h3>Test v-show</h3>
+<p style="margin-bottom:10px;opacity:0.7">Une seule section devrait être visible à la fois:</p>
+
+<div v-show="v==='d'" class="section" style="border-color:#5865F2">
+<h2>🏠 Section Dashboard</h2>
+<p>Cette section s'affiche quand v === 'd'</p>
+<p style="opacity:0.5;margin-top:10px">Si vous voyez toutes les sections en même temps, il y a un problème!</p>
+</div>
+
+<div v-show="v==='eco'" class="section" style="border-color:#57F287">
+<h2>💰 Section Économie</h2>
+<p>Cette section s'affiche quand v === 'eco'</p>
+<p style="opacity:0.5;margin-top:10px">Seule cette section devrait être visible maintenant.</p>
+</div>
+
+<div v-show="v==='niv'" class="section" style="border-color:#FFA500">
+<h2>⭐ Section Niveaux</h2>
+<p>Cette section s'affiche quand v === 'niv'</p>
+<p style="opacity:0.5;margin-top:10px">Seule cette section devrait être visible maintenant.</p>
+</div>
+</div>
+
+<div class="card">
+<h3>Debug Info</h3>
+<div class="debug">
+<pre>v = "{{ v }}"
+vueLoaded = {{ vueLoaded }}
+appMounted = {{ appMounted }}
+isMobile = {{ isMobile }}
+window.innerWidth = {{ windowWidth }}px</pre>
+</div>
+</div>
+
+<div class="card" style="background:#ED4245;color:#fff">
+<h3>⚠️ Que vérifier?</h3>
+<ul style="line-height:1.8;margin-left:20px">
+<li>Cliquez sur les boutons ci-dessus</li>
+<li>UNE SEULE section colorée devrait être visible à la fois</li>
+<li>Si vous voyez les 3 sections en même temps → Vue ne fonctionne pas</li>
+<li>Si seule une section s'affiche → v-show fonctionne correctement ✅</li>
+</ul>
+</div>
+</div>
+
+<script>
+console.log('🔧 Chargement du diagnostic...');
+const{createApp}=Vue;
+createApp({
+data(){
+return{
+vueLoaded:true,
+appMounted:false,
+v:'d',
+isMobile:false,
+windowWidth:window.innerWidth
+}
+},
+mounted(){
+this.appMounted=true;
+this.checkMobile();
+window.addEventListener('resize',this.checkMobile);
+console.log('✅ App montée, v =', this.v);
+},
+methods:{
+checkMobile(){
+this.isMobile=window.innerWidth<=768;
+this.windowWidth=window.innerWidth;
+}
+}
+}).mount('#app');
+console.log('✅ Vue monté avec succès');
+</script>
+</body>
+</html>

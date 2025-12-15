@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>BAG Bot Dashboard V2 Ultra-Complet</title>
+<script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:sans-serif;background:#111;color:#fff}
+.sidebar{width:240px;height:100vh;position:fixed;background:#1a1a1a;padding:20px;overflow-y:auto}
+.main{margin-left:240px;padding:30px}
+.card{background:#222;padding:20px;border-radius:12px;margin-bottom:20px}
+.nav{padding:12px;border-radius:8px;cursor:pointer;margin-bottom:6px}
+.nav.active{background:linear-gradient(90deg,#5865F2,#4752C4)}
+.btn{padding:10px 20px;border-radius:8px;font-weight:600;border:none;cursor:pointer;margin-right:8px}
+.btn-primary{background:#5865F2;color:white}
+.btn-success{background:#57F287;color:#000}
+.btn-danger{background:#ED4245;color:white}
+input,select,textarea{padding:10px;border-radius:6px;border:2px solid #333;background:#0a0a0a;color:white;width:100%}
+table{width:100%;border-collapse:collapse}
+th,td{padding:10px;border-bottom:1px solid #333}
+.tab{padding:10px 20px;border-radius:8px;cursor:pointer;background:#222;display:inline-block;margin:0 8px 8px 0;font-weight:600}
+.tab.active{background:linear-gradient(90deg,#5865F2,#4752C4)}
+.field-group{background:#1a1a1a;padding:15px;border-radius:8px;margin-bottom:15px}
+.field-group h4{margin-bottom:10px;color:#5865F2;font-size:16px}
+</style>
+</head>
+<body>
+<div id="app">
+<div class="sidebar">
+<h1 style="font-size:20px;margin-bottom:20px;">🤖 BAG Bot V2</h1>
+<div class="nav" :class="{active:v==='d'}" @click="v='d'">🏠 Dashboard</div>
+<div class="nav" :class="{active:v==='eco'}" @click="v='eco';load()">💰 Économie</div>
+<div class="nav" :class="{active:v==='niv'}" @click="v='niv';load()">📈 Niveaux</div>
+<div class="nav" :class="{active:v==='boost'}" @click="v='boost';load()">🚀 Booster</div>
+<div class="nav" :class="{active:v==='count'}" @click="v='count';load()">🔢 Comptage</div>
+<div class="nav" :class="{active:v==='av'}" @click="v='av';load()">🎲 A/V</div>
+<div class="nav" :class="{active:v==='logs'}" @click="v='logs';load()">📝 Logs</div>
+<div class="nav" :class="{active:v==='tick'}" @click="v='tick';load()">🎫 Tickets</div>
+<div class="nav" :class="{active:v==='conf'}" @click="v='conf';load()">💬 Confess</div>
+<div class="nav" :class="{active:v==='bak'}" @click="v='bak';load()">💾 Backups</div>
+<div class="nav" :class="{active:v==='ctrl'}" @click="v='ctrl'">🎮 Contrôle Bot</div>
+<div class="nav" :class="{active:v==='music'}" @click="v='music';loadMusic()">🎵 Musique</div>
+</div>
+
+<div class="main">
+
+<!-- Dashboard -->
+<div v-show="v==='d'">
+<h2 style="font-size:28px;margin-bottom:20px;">Dashboard</h2>
+<div class="card">
+<p style="margin-bottom:10px;">Économie: <strong>{{Object.keys(eco).length}}</strong></p>
+<p style="margin-bottom:10px;">Niveaux: <strong>{{Object.keys(niv).length}}</strong></p>
+<p style="margin-bottom:20px;">Prompts: <strong>{{tdS.length+tdN.length}}</strong></p>
+<button @click="load()" class="btn btn-primary">Rafraîchir</button>
+</div>
+</div>
+
+<!-- Économie -->
+<div v-show="v==='eco'">
+<h2 style="font-size:28px;margin-bottom:20px;">💰 Économie ({{Object.keys(eco).length}})</h2>
+<div style="margin-bottom:20px;">
+<span class="tab" :class="{active:ecoT==='u'}" @click="ecoT='u'">Users</span>
+<span class="tab" :class="{active:ecoT==='s'}" @click="ecoT='s'">Settings</span>
+<span class="tab" :class="{active:ecoT==='c'}" @click="ecoT='c'">Cooldowns</span>
+<span class="tab" :class="{active:ecoT==='a'}" @click="ecoT='a'">Actions</span>
+<span class="tab" :class="{active:ecoT==='k'}" @click="ecoT='k'">Karma</span>
+</div>
+<div v-show="ecoT==='u'" class="card">
+<table>
+<thead><tr><th>#</th><th>Membre</th><th>Montant</th><th>Charme</th><th>Perv</th></tr></thead>
+<tbody><tr v-for="(d,uid,i) in eco" :key="uid">
+<td>{{i+1}}</td><td style="font-weight:500;">{{getMemberName(uid)}}</td>
+<td style="font-weight:bold;color:#57F287;">{{(d.amount||0).toLocaleString()}} {{curr}}</td>
+<td>🫦 {{d.charm||0}}</td><td>😈 {{d.perversion||0}}</td>
+</tr></tbody>
+</table>
+</div>
+<div v-show="ecoT==='s'" class="card">
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;">
+<div><label>Travail</label><input type="number" v-model.number="ecoW"></div>
+<div><label>Pêche</label><input type="number" v-model.number="ecoF"></div>
+<div><label>Devise</label><input v-model="curr"></div>
+</div>
+<button @click="saveEco()" class="btn btn-success" style="margin-top:15px;">Sauvegarder</button>
+</div>
+<div v-show="ecoT==='c'" class="card">
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;">
+<div v-for="(val,act) in cool" :key="act">
+<label style="font-size:13px;">{{act}}</label>
+<input type="number" v-model.number="cool[act]" style="font-size:13px;">
+</div>
+</div>
+</div>
+<div v-show="ecoT==='a'" class="card">
+<select v-model="selAct" @change="loadAct()" style="margin-bottom:15px;">
+<option :value="null">Sélectionner...</option>
+<option v-for="a in Object.keys(actCfg).sort()" :key="a" :value="a">{{a}}</option>
+</select>
+<div v-if="curAct" style="max-height:600px;overflow-y:auto;">
+<!-- Succès -->
+<div class="field-group">
+<h4>✅ Réussite</h4>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+<div><label>Argent Min</label><input type="number" v-model.number="curAct.moneyMin"></div>
+<div><label>Argent Max</label><input type="number" v-model.number="curAct.moneyMax"></div>
+<div><label>Karma</label><select v-model="curAct.karma"><option value="none">Aucun</option><option value="charm">Charme</option><option value="perversion">Perversion</option></select></div>
+<div><label>Karma Δ</label><input type="number" v-model.number="curAct.karmaDelta"></div>
+<div><label>XP</label><input type="number" v-model.number="curAct.xpDelta"></div>
+<div><label>Taux Succès</label><input type="number" v-model.number="curAct.successRate" step="0.01" min="0" max="1"></div>
+</div>
+</div>
+<!-- Échec -->
+<div class="field-group">
+<h4>❌ Échec</h4>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+<div><label>Argent Min (échec)</label><input type="number" v-model.number="curAct.failMoneyMin"></div>
+<div><label>Argent Max (échec)</label><input type="number" v-model.number="curAct.failMoneyMax"></div>
+<div><label>Karma Δ (échec)</label><input type="number" v-model.number="curAct.failKarmaDelta"></div>
+<div><label>XP (échec)</label><input type="number" v-model.number="curAct.failXpDelta"></div>
+</div>
+</div>
+<!-- Partenaire -->
+<div class="field-group">
+<h4>👥 Partenaire</h4>
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
+<div><label>Part Argent</label><input type="number" v-model.number="curAct.partnerMoneyShare" step="0.01" min="0" max="1"></div>
+<div><label>Part Karma</label><input type="number" v-model.number="curAct.partnerKarmaShare" step="0.01" min="0" max="1"></div>
+<div><label>Part XP</label><input type="number" v-model.number="curAct.partnerXpShare" step="0.01" min="0" max="1"></div>
+</div>
+</div>
+<!-- Autres -->
+<div class="field-group">
+<h4>⚙️ Autres paramètres</h4>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+<div><label>Cooldown (sec)</label><input type="number" v-model.number="curAct.cooldown"></div>
+<div v-if="curAct.zones"><label>Zones</label><input v-model="curAct.zones" readonly></div>
+</div>
+</div>
+</div>
+</div>
+<div v-show="ecoT==='k'" class="card">
+<h3 style="margin-bottom:15px;">Configuration Karma</h3>
+<div class="field-group">
+<h4>🔄 Reset Automatique</h4>
+<label><input type="checkbox" v-model="karmaRes.enabled" style="width:auto;margin-right:10px;">Activer le reset automatique</label>
+<div v-if="karmaRes.enabled" style="margin-top:15px;">
+<label>Jour de reset</label>
+<select v-model.number="karmaRes.day" style="margin-top:5px;">
+<option :value="0">Dimanche</option><option :value="1">Lundi</option><option :value="2">Mardi</option>
+<option :value="3">Mercredi</option><option :value="4">Jeudi</option><option :value="5">Vendredi</option><option :value="6">Samedi</option>
+</select>
+</div>
+</div>
+<div class="field-group" style="margin-top:15px;">
+<h4>📊 Statistiques</h4>
+<p style="margin-bottom:5px;">Utilisateurs avec charme: <strong>{{Object.values(eco).filter(u=>u.charm>0).length}}</strong></p>
+<p>Utilisateurs avec perversion: <strong>{{Object.values(eco).filter(u=>u.perversion>0).length}}</strong></p>
+</div>
+</div>
+</div>
+
+<!-- Niveaux -->
+<div v-show="v==='niv'">
+<h2 style="font-size:28px;margin-bottom:20px;">📈 Niveaux ({{Object.keys(niv).length}})</h2>
+<div style="margin-bottom:20px;">
+<span class="tab" :class="{active:nivT==='u'}" @click="nivT='u'">Users</span>
+<span class="tab" :class="{active:nivT==='xp'}" @click="nivT='xp'">Config XP</span>
+<span class="tab" :class="{active:nivT==='r'}" @click="nivT='r'">Rewards</span>
+<span class="tab" :class="{active:nivT==='an'}" @click="nivT='an'">Annonces</span>
+<span class="tab" :class="{active:nivT==='ca'}" @click="nivT='ca'">Cartes</span>
+</div>
+<div v-show="nivT==='u'" class="card">
+<table>
+<thead><tr><th>#</th><th>Membre</th><th>Niveau</th><th>XP</th><th>Messages</th></tr></thead>
+<tbody><tr v-for="(d,uid,i) in niv" :key="uid">
+<td>{{i+1}}</td><td style="font-weight:500;">{{getMemberName(uid)}}</td>
+<td style="font-weight:bold;color:#FEE75C;font-size:20px;">{{d.level||0}}</td>
+<td>{{(d.xp||0).toLocaleString()}}</td><td>{{d.messages||0}}</td>
+</tr></tbody>
+</table>
+</div>
+<div v-show="nivT==='xp'" class="card">
+<h3 style="margin-bottom:15px;">Configuration XP</h3>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;">
+<div><label>XP Message Min</label><input type="number" v-model.number="nivXpMsgMin"></div>
+<div><label>XP Message Max</label><input type="number" v-model.number="nivXpMsgMax"></div>
+<div><label>XP Vocal Min</label><input type="number" v-model.number="nivXpVoiceMin"></div>
+<div><label>XP Vocal Max</label><input type="number" v-model.number="nivXpVoiceMax"></div>
+<div><label>Cooldown Message (sec)</label><input type="number" v-model.number="nivCoolMsg"></div>
+<div><label>Cooldown Vocal (sec)</label><input type="number" v-model.number="nivCoolVoice"></div>
+</div>
+</div>
+<div v-show="nivT==='r'" class="card">
+<h3 style="margin-bottom:15px;">Récompenses (Rôles par Niveau)</h3>
+<p>Config rewards : {{Object.keys(nivRewards).length}} niveaux</p>
+</div>
+<div v-show="nivT==='an'" class="card">
+<h3 style="margin-bottom:15px;">Annonces</h3>
+<p>Level Up et Role Award</p>
+</div>
+<div v-show="nivT==='ca'" class="card">
+<h3 style="margin-bottom:15px;">Cartes de Niveau</h3>
+<p>Config backgrounds et styles</p>
+</div>
+</div>
+
+<!-- Booster -->
+<div v-show="v==='boost'">
+<h2 style="font-size:28px;margin-bottom:20px;">🚀 Booster</h2>
+<div class="card">
+<label><input type="checkbox" v-model="boost.enabled" style="width:auto;margin-right:10px;">Activer Système Booster</label>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;margin-top:20px;">
+<div><label>XP Texte (×)</label><input type="number" v-model.number="boost.textXpMult" step="0.1"></div>
+<div><label>XP Vocal (×)</label><input type="number" v-model.number="boost.voiceXpMult" step="0.1"></div>
+<div><label>Cooldown Actions (×)</label><input type="number" v-model.number="boost.actionCooldownMult" step="0.1"></div>
+<div><label>Prix Shop (×)</label><input type="number" v-model.number="boost.shopPriceMult" step="0.1"></div>
+</div>
+<div style="margin-top:20px;">
+<h4 style="margin-bottom:10px;">Rôles Booster ({{boost.roles?.length||0}})</h4>
+<div v-if="boost.roles && boost.roles.length > 0" style="background:#1a1a1a;padding:15px;border-radius:8px;">
+<div v-for="(role,i) in boost.roles" :key="i" style="padding:8px;background:#0a0a0a;margin-bottom:8px;border-radius:6px;font-size:13px;">
+<strong>{{getRoleName(role)}}</strong>
+<div style="opacity:0.6;font-size:11px;font-family:monospace;margin-top:4px;">ID: {{role}}</div>
+</div>
+</div>
+<div v-else style="padding:20px;text-align:center;opacity:0.7;">
+Aucun rôle configuré
+</div>
+</div>
+</div>
+</div>
+
+<!-- Comptage -->
+<div v-show="v==='count'">
+<h2 style="font-size:28px;margin-bottom:20px;">🔢 Comptage</h2>
+<div class="card">
+<label><input type="checkbox" v-model="countFormulas" style="width:auto;margin-right:10px;">Formules Autorisées</label>
+<div style="margin-top:20px;">
+<p style="margin-bottom:10px;">Nombre Actuel: <strong style="font-size:24px;color:#FEE75C;">{{countState.current||0}}</strong></p>
+<p style="margin-bottom:10px;">Dernier User: <span style="font-family:monospace;">{{countState.lastUserId?.slice(-10)||'Aucun'}}</span></p>
+<p style="margin-bottom:10px;">Nombres Atteints: <strong>{{countAch.length}}</strong></p>
+<div style="max-height:200px;overflow-y:auto;background:#1a1a1a;padding:10px;border-radius:8px;">
+{{countAch.join(', ')}}
+</div>
+</div>
+</div>
+</div>
+
+<!-- Action/Vérité -->
+<div v-show="v==='av'">
+<h2 style="font-size:28px;margin-bottom:20px;">🎲 Action/Vérité</h2>
+<div style="margin-bottom:20px;">
+<span class="tab" :class="{active:avT==='config'}" @click="avT='config'">Config AouV</span>
+<span class="tab" :class="{active:avT==='prompt'}" @click="avT='prompt'">Prompts</span>
+</div>
+<div v-show="avT==='config'" class="card">
+<h3 style="margin-bottom:15px;">Channels</h3>
+<div style="margin-bottom:15px;">
+<span class="tab" :class="{active:avMode==='sfw'}" @click="avMode='sfw'">🟢 SFW</span>
+<span class="tab" :class="{active:avMode==='nsfw'}" @click="avMode='nsfw'">🔴 NSFW</span>
+</div>
+<p>Channels {{avMode}}: {{avMode==='sfw'?tdSfwCh.length:tdNsfwCh.length}}</p>
+</div>
+<div v-show="avT==='prompt'" class="card">
+<div style="margin-bottom:15px;">
+<span class="tab" :class="{active:avMode==='sfw'}" @click="avMode='sfw'">🟢 SFW ({{tdS.length}})</span>
+<span class="tab" :class="{active:avMode==='nsfw'}" @click="avMode='nsfw'">🔴 NSFW ({{tdN.length}})</span>
+</div>
+<div style="margin-bottom:10px;">
+<span class="tab" :class="{active:avType==='v'}" @click="avType='v'">Vérités</span>
+<span class="tab" :class="{active:avType==='a'}" @click="avType='a'">Actions</span>
+</div>
+<div style="max-height:400px;overflow-y:auto;">
+<div v-if="avMode==='sfw'&&avType==='v'">
+<div v-for="(p,i) in tdS.filter(x=>x.type==='verite')" :key="i" style="padding:12px;background:#1a1a1a;margin-bottom:8px;border-radius:8px;border-left:4px solid #57F287;">
+<div style="font-weight:bold;color:#57F287;">{{i+1}}. <span style="font-size:11px;">ID {{p.id}}</span></div>
+<div>{{p.text}}</div>
+</div>
+</div>
+<div v-if="avMode==='sfw'&&avType==='a'">
+<div v-for="(p,i) in tdS.filter(x=>x.type==='action')" :key="i" style="padding:12px;background:#1a1a1a;margin-bottom:8px;border-radius:8px;border-left:4px solid #57F287;">
+<div style="font-weight:bold;color:#57F287;">{{i+1}}. <span style="font-size:11px;">ID {{p.id}}</span></div>
+<div>{{p.text}}</div>
+</div>
+</div>
+<div v-if="avMode==='nsfw'&&avType==='v'">
+<div v-for="(p,i) in tdN.filter(x=>x.type==='verite')" :key="i" style="padding:12px;background:#1a1a1a;margin-bottom:8px;border-radius:8px;border-left:4px solid #ED4245;">
+<div style="font-weight:bold;color:#ED4245;">{{i+1}}. <span style="font-size:11px;">ID {{p.id}}</span></div>
+<div>{{p.text}}</div>
+</div>
+</div>
+<div v-if="avMode==='nsfw'&&avType==='a'">
+<div v-for="(p,i) in tdN.filter(x=>x.type==='action')" :key="i" style="padding:12px;background:#1a1a1a;margin-bottom:8px;border-radius:8px;border-left:4px solid #ED4245;">
+<div style="font-weight:bold;color:#ED4245;">{{i+1}}. <span style="font-size:11px;">ID {{p.id}}</span></div>
+<div>{{p.text}}</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<!-- Logs -->
+<div v-show="v==='logs'">
+<h2 style="font-size:28px;margin-bottom:20px;">📝 Logs</h2>
+<div class="card"><p>13 types de logs configurables</p></div>
+</div>
+
+<!-- Tickets -->
+<div v-show="v==='tick'">
+<h2>🎫 Tickets ({{tickCounter}})</h2>
+<div style="margin:20px 0;">
+<span class="tab" :class="{active:tickT==='config'}" @click="tickT='config'">⚙️ Config</span>
+<span class="tab" :class="{active:tickT==='cats'}" @click="tickT='cats'">📁 Catégories</span>
+<span class="tab" :class="{active:tickT==='hist'}" @click="tickT='hist'">📋 Historique</span>
+<span class="tab" :class="{active:tickT==='panel'}" @click="tickT='panel'">🎨 Panel</span>
+</div>
+
+<div v-show="tickT==='config'" class="card">
+<h3>⚙️ Configuration</h3>
+<div class="field-group">
+<label style="display:flex;gap:8px;align-items:center;">
+<input type="checkbox" v-model="tickEnabled" disabled style="width:auto;">
+Système activé ({{tickEnabled?'Oui':'Non'}})
+</label>
+</div>
+<div class="field-group">
+<label style="display:flex;gap:8px;align-items:center;">
+<input type="checkbox" v-model="editingConfig" style="width:auto;">
+✏️ Mode édition
+</label>
+</div>
+<div class="field-group">
+<h4>Channels</h4>
+<div style="display:grid;grid-template-columns:1fr;gap:12px;margin-top:10px;">
+<div>
+<label style="font-size:13px;opacity:0.8;">📁 Catégorie Discord</label>
+<select v-if="editingConfig" v-model="tickConfig.categoryId" style="margin-top:5px;">
+<option value="">-- Sélectionner --</option>
+<option v-for="(name,id) in channels" :key="id" :value="id">{{name}}</option>
+</select>
+<input v-else :value="getChannelName(tickConfig.categoryId)" readonly style="margin-top:5px;background:#1a1a1a;">
+</div>
+<div>
+<label style="font-size:13px;opacity:0.8;">🎨 Channel du Panel</label>
+<select v-if="editingConfig" v-model="tickConfig.panelChannelId" style="margin-top:5px;">
+<option value="">-- Sélectionner --</option>
+<option v-for="(name,id) in channels" :key="id" :value="id">{{name}}</option>
+</select>
+<input v-else :value="getChannelName(tickConfig.panelChannelId)" readonly style="margin-top:5px;background:#1a1a1a;">
+</div>
+<div>
+<label style="font-size:13px;opacity:0.8;">📋 Channel des Logs</label>
+<select v-if="editingConfig" v-model="tickConfig.logChannelId" style="margin-top:5px;">
+<option value="">-- Sélectionner --</option>
+<option v-for="(name,id) in channels" :key="id" :value="id">{{name}}</option>
+</select>
+<input v-else :value="getChannelName(tickConfig.logChannelId)" readonly style="margin-top:5px;background:#1a1a1a;">
+</div>
+<div>
+<label style="font-size:13px;opacity:0.8;">📄 Channel des Transcripts</label>
+<select v-if="editingConfig" v-model="tickConfig.transcriptChannelId" style="margin-top:5px;">
+<option value="">-- Sélectionner --</option>
+<option v-for="(name,id) in channels" :key="id" :value="id">{{name}}</option>
+</select>
+<input v-else :value="getChannelName(tickConfig.transcriptChannelId)" readonly style="margin-top:5px;background:#1a1a1a;">
+</div>
+</div>
+</div>
+<div v-if="editingConfig" style="margin-top:20px;">
+<button @click="saveConfig" class="btn btn-success">💾 Sauvegarder</button>
+<button @click="editingConfig=false" class="btn" style="background:#666;">❌ Annuler</button>
+</div>
+</div>
+
+<div v-show="tickT==='cats'" class="card">
+<h3>Catégories ({{tickCats.length}})</h3>
+<div v-for="(cat,idx) in tickCats" :key="cat.key" style="background:#1a1a1a;padding:15px;margin:10px 0;border-radius:8px;">
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+<h4 style="margin:0;">{{cat.emoji}} {{cat.label}} <span style="opacity:0.6;font-size:12px;">({{cat.key}})</span></h4>
+<button v-if="editingCat!==idx" @click="editingCat=idx" class="btn btn-primary" style="padding:6px 12px;font-size:12px;">✏️ Modifier</button>
+<div v-else>
+<button @click="saveCat(idx)" class="btn btn-success" style="padding:6px 12px;font-size:12px;margin-right:5px;">💾 Sauvegarder</button>
+<button @click="editingCat=-1" class="btn" style="padding:6px 12px;font-size:12px;background:#666;">❌ Annuler</button>
+</div>
+</div>
+<div style="margin-bottom:10px;">
+<label style="font-size:12px;opacity:0.8;">Label</label>
+<input v-model="cat.label" :readonly="editingCat!==idx" style="margin-top:5px;">
+</div>
+<div style="margin-bottom:10px;">
+<label style="font-size:12px;opacity:0.8;">Emoji</label>
+<input v-model="cat.emoji" :readonly="editingCat!==idx" style="margin-top:5px;">
+</div>
+<div style="margin-bottom:10px;">
+<label style="font-size:12px;opacity:0.8;">Description</label>
+<textarea v-model="cat.description" :readonly="editingCat!==idx" rows="2" style="margin-top:5px;"></textarea>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:13px;">
+<div><strong>Staff Roles:</strong> {{cat.staffPingRoleIds.length}}</div>
+<div><strong>Viewer Roles:</strong> {{cat.extraViewerRoleIds.length}}</div>
+</div>
+<div v-if="cat.bannerUrl" style="margin-top:8px;">
+<label style="font-size:12px;opacity:0.8;">Banner URL</label>
+<input v-model="cat.bannerUrl" :readonly="editingCat!==idx" style="font-size:11px;margin-top:5px;">
+</div>
+</div>
+</div>
+
+<div v-show="tickT==='hist'" class="card">
+<h3>Historique ({{Object.keys(tickRecords).length}})</h3>
+<p style="opacity:0.8;margin:10px 0;">
+<strong>Ouverts:</strong> {{Object.values(tickRecords).filter(function(t){return!t.closedAt}).length}} | 
+<strong>Fermés:</strong> {{Object.values(tickRecords).filter(function(t){return t.closedAt}).length}}
+</p>
+<div style="max-height:400px;overflow-y:auto;">
+<table style="width:100%;font-size:13px;">
+<thead>
+<tr style="background:#1a1a1a;">
+<th style="padding:8px;">ID</th>
+<th style="padding:8px;">Catégorie</th>
+<th style="padding:8px;">Statut</th>
+</tr>
+</thead>
+<tbody>
+<tr v-for="(rec,id) in tickRecords" :key="id" style="border-bottom:1px solid #2b2b2b;">
+<td style="padding:8px;font-family:monospace;font-size:11px;">{{id.slice(-6)}}</td>
+<td style="padding:8px;">{{rec.categoryKey}}</td>
+<td style="padding:8px;">
+<span v-if="rec.closedAt" style="padding:4px 8px;background:#57F287;color:#000;border-radius:4px;font-size:11px;">Fermé</span>
+<span v-else style="padding:4px 8px;background:#FEE75C;color:#000;border-radius:4px;font-size:11px;">Ouvert</span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+
+<div v-show="tickT==='panel'" class="card">
+<h3>🎨 Panel Ticket</h3>
+<div class="field-group">
+<label>Titre</label>
+<input v-model="tickPanel.title" placeholder="Titre du panel">
+</div>
+<div class="field-group">
+<label>Texte</label>
+<textarea v-model="tickPanel.text" rows="4" placeholder="Message du panel"></textarea>
+</div>
+<div class="field-group">
+<label>Couleur (hex)</label>
+<input v-model="tickPanel.color" placeholder="#5865F2">
+</div>
+<div class="field-group">
+<label>URL de l'image</label>
+<div style="display:flex;gap:10px;">
+<input v-model="tickPanel.imageUrl" placeholder="https://..." style="flex:1;">
+<input type="file" @change="uploadImage($event,'imageUrl')" accept="image/*" style="width:auto;background:#5865F2;color:white;cursor:pointer;padding:8px;">
+</div>
+</div>
+<div class="field-group">
+<label>URL de la miniature</label>
+<div style="display:flex;gap:10px;">
+<input v-model="tickPanel.thumbnailUrl" placeholder="https://..." style="flex:1;">
+<input type="file" @change="uploadImage($event,'thumbnailUrl')" accept="image/*" style="width:auto;background:#5865F2;color:white;cursor:pointer;padding:8px;">
+</div>
+</div>
+<div class="field-group">
+<label>Footer (texte en bas)</label>
+<input v-model="tickPanel.footer" placeholder="Texte du footer">
+</div>
+<div class="field-group">
+<label>Timestamp</label>
+<label style="display:flex;gap:8px;align-items:center;margin-top:5px;">
+<input type="checkbox" v-model="tickPanel.timestamp" style="width:auto;">
+Afficher le timestamp
+</label>
+</div>
+<div style="margin-top:20px;">
+<button @click="savePanel" class="btn btn-success">💾 Sauvegarder le Panel</button>
+</div>
+</div>
+
+</div>
+<!-- Confessions -->
+<div v-show="v==='conf'">
+<h2 style="font-size:28px;margin-bottom:20px;">💬 Confessions</h2>
+<div class="card"><p>SFW/NSFW</p></div>
+</div>
+
+
+<!-- Backups -->
+<div v-show="v==='bak'">
+<h2 style="font-size:28px;margin-bottom:20px;">💾 Backups ({{baks.length}})</h2>
+<div class="card" style="margin-bottom:15px;">
+<button @click="createBak()" class="btn btn-success">Créer Backup</button>
+<button @click="load()" class="btn btn-primary">Rafraîchir</button>
+</div>
+<div class="card">
+<div v-if="baks.length===0" style="text-center:center;padding:40px;opacity:0.7;">
+<p>Aucun backup disponible</p>
+</div>
+<div v-else>
+<div v-for="b in baks" :key="b.filename" style="padding:15px;background:#1a1a1a;margin-bottom:10px;border-radius:8px;display:flex;justify-content:space-between;align-items:center;">
+<div>
+<div style="font-weight:bold;margin-bottom:5px;">{{b.filename}}</div>
+<div style="font-size:13px;opacity:0.7;">{{b.date}} - {{b.size}}</div>
+</div>
+<button @click="restoreBak(b.filename)" class="btn btn-danger">Restaurer</button>
+</div>
+</div>
+</div>
+</div>
+
+<!-- Contrôle Bot -->
+<div v-show="v==='ctrl'">
+<h2 style="font-size:28px;margin-bottom:20px;">🎮 Contrôle Bot</h2>
+<div class="card">
+<h3 style="margin-bottom:20px;font-size:20px;">Actions</h3>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;">
+<button @click="restartBot()" class="btn btn-danger" style="width:100%;padding:15px;font-size:16px;">
+<div style="font-size:24px;margin-bottom:5px;">🔄</div>
+Redémarrer Bot
+</button>
+<button @click="deployCmd()" class="btn btn-success" style="width:100%;padding:15px;font-size:16px;">
+<div style="font-size:24px;margin-bottom:5px;">🚀</div>
+Déployer Commandes
+</button>
+</div>
+<div style="margin-top:30px;padding:20px;background:#1a1a1a;border-radius:8px;">
+<h4 style="margin-bottom:15px;">État</h4>
+<p style="margin-bottom:10px;">Status: <span style="color:#57F287;font-weight:bold;">EN LIGNE</span></p>
+<p style="margin-bottom:10px;">Commandes déployées: <strong>74</strong></p>
+<p>Dashboard V2: <strong>v2.0</strong></p>
+</div>
+</div>
+</div>
+
+</div>
+</div>
+
+<script>
+const{createApp}=Vue;
+createApp({
+data(){return{
+v:'d',
+ecoT:'u',eco:{},ecoW:50,ecoF:30,curr:'BAG$',cool:{},actCfg:{},selAct:null,curAct:null,karmaRes:{},
+nivT:'u',niv:{},nivXpMsgMin:15,nivXpMsgMax:35,nivXpVoiceMin:5,nivXpVoiceMax:35,nivCoolMsg:0,nivCoolVoice:60,nivRewards:{},
+boost:{enabled:false,textXpMult:2,voiceXpMult:2,actionCooldownMult:0.5,shopPriceMult:0.5,roles:[]},
+countFormulas:false,countState:{},countAch:[],
+avT:'config',avMode:'sfw',avType:'v',tdS:[],tdN:[],tdSfwCh:[],tdNsfwCh:[],baks:[],tickT:'config',tickEnabled:false,tickCounter:0,tickConfig:{},tickCats:[],tickRecords:{},tickPanel:{},channels:{},editingCat:-1,editingConfig:false,members:{}
+}},
+async mounted(){
+console.log('🚀 Dashboard V2 Ultra-Complet mounted');
+await this.load();
+},
+methods:{
+async loadMusic(){console.log('Musique chargée')},
+
+uploadImage(e,field){
+const file=e.target.files[0];
+if(!file){return;}
+if(file.size>5*1024*1024){alert('❌ Fichier trop gros (max 5MB)');return;}
+const reader=new FileReader();
+reader.onload=(ev)=>{
+const base64=ev.target.result;
+if(field==='imageUrl')this.tickPanel.imageUrl=base64;
+else if(field==='thumbnailUrl')this.tickPanel.thumbnailUrl=base64;
+else if(field.startsWith('banner')){
+const idx=parseInt(field.split('-')[1]);
+this.tickCats[idx].bannerUrl=base64;
+}
+};
+reader.readAsDataURL(file);
+},
+async savePanel(){
+if(!confirm('Sauvegarder le panel?'))return;
+const r=await this.api('/api/tickets',{method:'POST',body:JSON.stringify({panel:this.tickPanel})});
+if(r&&r.success){alert('✅ Panel sauvegardé');}else{alert('❌ Erreur');}
+},
+async saveConfig(){
+if(!confirm('Sauvegarder la configuration?'))return;
+const r=await this.api('/api/tickets',{method:'POST',body:JSON.stringify({config:this.tickConfig})});
+if(r&&r.success){alert('✅ Config sauvegardée');this.editingConfig=false;}else{alert('❌ Erreur');}
+},
+getMemberName(id){
+if(!id)return'Inconnu';
+return this.members[id]||id;
+},
+getRoleName(id){
+if(!id)return'Inconnu';
+return this.channels[id]||id;
+},
+getChannelName(id){if(!id)return'Non configuré';return this.channels[id]||id;},
+async saveCat(idx){if(!confirm('Sauvegarder?'))return;const r=await this.api('/api/tickets',{method:'POST',body:JSON.stringify({categories:this.tickCats})});if(r&&r.success){alert('✅ Sauvegardé');this.editingCat=-1;}else{alert('❌ Erreur');}},
+async api(u,o={}){
+try{
+const r=await fetch(`http://82.67.65.98:3002${u}`,{...o,headers:{'Content-Type':'application/json'}});
+const d=await r.json();
+console.log('✓',u.split('/').pop());
+return d;
+}catch(e){console.error(e);return null}
+},
+async load(){
+console.log('Chargement...');
+const cfg=await this.api('/api/configs');
+if(cfg){
+if(cfg.economy){
+this.eco=cfg.economy.balances||{};
+this.ecoW=cfg.economy.settings?.baseWorkReward||50;
+this.ecoF=cfg.economy.settings?.baseFishReward||30;
+this.curr=cfg.economy.currency?.name||'BAG$';
+this.cool=cfg.economy.settings?.cooldowns||{};
+this.actCfg=cfg.economy.actions?.config||{};
+this.karmaRes=cfg.economy.karmaReset||{};
+if(cfg.economy.booster){
+this.boost=cfg.economy.booster;
+}
+console.log('✓ Éco:',Object.keys(this.eco).length);
+}
+if(cfg.levels){
+this.niv=cfg.levels.users||{};
+this.nivXpMsgMin=cfg.levels.xpMessageMin||15;
+this.nivXpMsgMax=cfg.levels.xpMessageMax||35;
+this.nivXpVoiceMin=cfg.levels.xpVoiceMin||5;
+this.nivXpVoiceMax=cfg.levels.xpVoiceMax||35;
+this.nivCoolMsg=cfg.levels.messageCooldownSec||0;
+this.nivCoolVoice=cfg.levels.voiceCooldownSec||60;
+this.nivRewards=cfg.levels.rewards||{};
+console.log('✓ Niv:',Object.keys(this.niv).length);
+}
+if(cfg.truthdare){
+this.tdS=cfg.truthdare.sfw?.prompts||[];
+this.tdN=cfg.truthdare.nsfw?.prompts||[];
+this.tdSfwCh=cfg.truthdare.sfw?.channels||[];
+this.tdNsfwCh=cfg.truthdare.nsfw?.channels||[];
+console.log('✓ TD:',this.tdS.length+this.tdN.length);
+}
+if(cfg.counting){
+this.countFormulas=cfg.counting.allowFormulas||false;
+this.countState=cfg.counting.state||{};
+this.countAch=cfg.counting.achievedNumbers||[];
+}
+if(cfg.tickets){
+this.tickEnabled=cfg.tickets.enabled||false;
+this.tickCounter=cfg.tickets.counter||0;
+this.tickConfig=cfg.tickets.config||{};
+this.tickCats=cfg.tickets.categories||[];
+this.tickRecords=cfg.tickets.records||{};
+this.tickPanel=cfg.tickets.panel||{};
+console.log('✓ Tickets:',Object.keys(this.tickRecords).length);
+}
+const ch=await this.api('/api/discord/channels');
+if(ch)this.channels=ch;
+const memb=await this.api('/api/discord/members');
+if(memb)this.members=memb;
+const bak=await this.api('/backups');
+if(bak)this.baks=bak.backups||[];
+}
+},
+loadAct(){this.curAct=this.actCfg[this.selAct]||{};},
+async saveEco(){
+await this.api('/api/economy',{method:'POST',body:JSON.stringify({settings:{baseWorkReward:this.ecoW,baseFishReward:this.ecoF,cooldowns:this.cool},currency:{name:this.curr}})});
+alert('✅ Sauvegardé');
+},
+async createBak(){
+if(!confirm('Créer backup?'))return;
+const r=await this.api('/backup',{method:'POST'});
+if(r){alert('✅ Créé');await this.load();}
+},
+async restoreBak(f){
+if(!confirm(`Restaurer ${f}?`))return;
+const r=await this.api('/restore',{method:'POST',body:JSON.stringify({filename:f})});
+if(r){alert('✅ Restauré');location.reload();}
+},
+async restartBot(){
+if(!confirm('Redémarrer le bot?'))return;
+const r=await this.api('/bot/control',{method:'POST',body:JSON.stringify({action:'restart'})});
+if(r)alert('✅ Bot en cours de redémarrage...');
+},
+async deployCmd(){
+if(!confirm('Déployer toutes les commandes?'))return;
+const r=await this.api('/bot/control',{method:'POST',body:JSON.stringify({action:'deploy'})});
+if(r)alert('✅ Déploiement en cours...');
+}
+
+}
+}).mount('#app');
+</script>
+</body>
+</html>

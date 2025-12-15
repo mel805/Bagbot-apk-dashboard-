@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Styles NSFW Sexy pour Discord</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Cormorant+Garamond:wght@400;600;700&family=Cinzel:wght@400;600;700&family=Bodoni+Moda:wght@400;600;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+            background: #1a1a1a;
+            color: #fff;
+            padding: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            padding: 40px 20px;
+            background: linear-gradient(135deg, #d946a6 0%, #8b2f5e 100%);
+            border-radius: 12px;
+            margin-bottom: 30px;
+            box-shadow: 0 8px 32px rgba(217, 70, 166, 0.3);
+        }
+        
+        .header h1 {
+            font-size: 42px;
+            font-weight: 700;
+            margin-bottom: 15px;
+            text-shadow: 2px 2px 8px rgba(0,0,0,0.5);
+        }
+        
+        .header p {
+            font-size: 18px;
+            opacity: 0.95;
+        }
+        
+        .styles-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 30px;
+            max-width: 1800px;
+            margin: 0 auto;
+        }
+        
+        .style-box {
+            background: #2f3136;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+            transition: transform 0.3s ease;
+        }
+        
+        .style-box:hover {
+            transform: translateY(-5px);
+        }
+        
+        .style-header {
+            padding: 20px;
+            font-weight: 700;
+            font-size: 24px;
+            text-align: center;
+            position: relative;
+        }
+        
+        .style1-header {
+            background: linear-gradient(135deg, #ff1744 0%, #c2185b 100%);
+        }
+        
+        .style2-header {
+            background: linear-gradient(135deg, #d946a6 0%, #8b2f5e 100%);
+        }
+        
+        .style3-header {
+            background: linear-gradient(135deg, #6a1b9a 0%, #4a148c 100%);
+        }
+        
+        .style4-header {
+            background: linear-gradient(135deg, #000000 0%, #434343 100%);
+        }
+        
+        .style5-header {
+            background: linear-gradient(135deg, #bf360c 0%, #e64a19 100%);
+        }
+        
+        .style-description {
+            padding: 15px 20px;
+            background: #202225;
+            color: #b9bbbe;
+            font-size: 14px;
+            border-bottom: 2px solid #40444b;
+        }
+        
+        .discord-preview {
+            padding: 20px;
+        }
+        
+        .category {
+            margin: 20px 0 10px 0;
+        }
+        
+        .category-name {
+            color: #96989d;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+            padding: 0 8px;
+        }
+        
+        .channel {
+            display: flex;
+            align-items: center;
+            padding: 6px 8px;
+            margin: 2px 0;
+            border-radius: 4px;
+            color: #96989d;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        
+        .channel:hover {
+            background: #393c43;
+            color: #dcddde;
+        }
+        
+        .channel-icon {
+            margin-right: 8px;
+            font-size: 18px;
+        }
+        
+        /* Style 1: Rouge Passion */
+        .style1 .category-name {
+            font-family: 'Playfair Display', serif;
+            font-size: 13px;
+            color: #ff1744;
+            font-weight: 700;
+        }
+        
+        .style1 .channel {
+            font-family: 'Playfair Display', serif;
+        }
+        
+        /* Style 2: Rose Velours */
+        .style2 .category-name {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 14px;
+            color: #d946a6;
+            font-style: italic;
+            font-weight: 700;
+        }
+        
+        .style2 .channel {
+            font-family: 'Cormorant Garamond', serif;
+            font-style: italic;
+        }
+        
+        /* Style 3: Violet Luxe */
+        .style3 .category-name {
+            font-family: 'Cinzel', serif;
+            font-size: 12px;
+            color: #ab47bc;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        
+        .style3 .channel {
+            font-family: 'Cinzel', serif;
+        }
+        
+        /* Style 4: Noir Élégant */
+        .style4 .category-name {
+            font-family: 'Bodoni Moda', serif;
+            font-size: 13px;
+            color: #ffffff;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+        }
+        
+        .style4 .channel {
+            font-family: 'Bodoni Moda', serif;
+        }
+        
+        /* Style 5: Feu Sensuel */
+        .style5 .category-name {
+            font-family: 'Playfair Display', serif;
+            font-size: 13px;
+            color: #ff6e40;
+            font-weight: 700;
+        }
+        
+        .style5 .channel {
+            font-family: 'Playfair Display', serif;
+        }
+        
+        .ping-example {
+            background: #414449;
+            border-left: 3px solid #3ba55d;
+            padding: 12px;
+            margin: 15px;
+            border-radius: 4px;
+            font-size: 13px;
+            font-family: 'Courier New', monospace;
+            color: #3ba55d;
+        }
+        
+        .footer {
+            text-align: center;
+            padding: 30px;
+            margin-top: 40px;
+            color: #b9bbbe;
+            font-size: 14px;
+        }
+        
+        .recommendation {
+            background: #3ba55d;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 700;
+            position: absolute;
+            top: 10px;
+            right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🔥 5 Styles NSFW Sensuels & Sexy</h1>
+        <p>Tous 100% pingables • Parfaits pour un serveur Discord adulte</p>
+    </div>
+    
+    <div class="styles-container">
+        <!-- STYLE 1: Rouge Passion -->
+        <div class="style-box">
+            <div class="style-header style1-header">
+                🌹 Style 1: Rouge Passion
+                <span class="recommendation">⭐ RECOMMANDÉ</span>
+            </div>
+            <div class="style-description">
+                <strong>Font:</strong> Playfair Display (Élégant & Sensuel)<br>
+                <strong>Couleur:</strong> Rouge #ff1744<br>
+                <strong>Style:</strong> Classique raffiné avec symboles cœur
+            </div>
+            <div class="discord-preview style1">
+                <div class="category">
+                    <div class="category-name">❤️‍🔥 ━━━ DÉSIRS ━━━ ❤️‍🔥</div>
+                    <div class="channel"><span class="channel-icon">#</span>💋 sensualite</div>
+                    <div class="channel"><span class="channel-icon">#</span>🔥 hot-place</div>
+                    <div class="channel"><span class="channel-icon">#</span>💕 fantasmes</div>
+                    <div class="channel"><span class="channel-icon">#</span>🍑 tentation</div>
+                </div>
+                
+                <div class="category">
+                    <div class="category-name">💎 ━━━ VITRINE ━━━ 💎</div>
+                    <div class="channel"><span class="channel-icon">#</span>✨ selfies-sexy</div>
+                    <div class="channel"><span class="channel-icon">#</span>👙 lingerie</div>
+                    <div class="channel"><span class="channel-icon">#</span>🔞 nudes-art</div>
+                    <div class="channel"><span class="channel-icon">#</span>💃 strip-tease</div>
+                </div>
+                
+                <div class="category">
+                    <div class="category-name">🌙 ━━━ NUIT CHAUDE ━━━ 🌙</div>
+                    <div class="channel"><span class="channel-icon">#</span>🍆 galerie-hard</div>
+                    <div class="channel"><span class="channel-icon">#</span>💦 videos-hot</div>
+                    <div class="channel"><span class="channel-icon">#</span>🎭 roleplay-nsfw</div>
+                </div>
+            </div>
+            <div class="ping-example">
+                ✅ Exemple: #sensualite #hot-place #nudes-art
+            </div>
+        </div>
+        
+        <!-- STYLE 2: Rose Velours -->
+        <div class="style-box">
+            <div class="style-header style2-header">
+                🌸 Style 2: Rose Velours
+            </div>
+            <div class="style-description">
+                <strong>Font:</strong> Cormorant Garamond (Italique & Élégant)<br>
+                <strong>Couleur:</strong> Rose #d946a6<br>
+                <strong>Style:</strong> Douceur sensuelle avec italique
+            </div>
+            <div class="discord-preview style2">
+                <div class="category">
+                    <div class="category-name">✧･ﾟ Plaisirs Interdits ･ﾟ✧</div>
+                    <div class="channel"><span class="channel-icon">#</span>💖 doux-peches</div>
+                    <div class="channel"><span class="channel-icon">#</span>🌹 passion-rose</div>
+                    <div class="channel"><span class="channel-icon">#</span>💋 baisers-sensuels</div>
+                    <div class="channel"><span class="channel-icon">#</span>🦋 caresses</div>
+                </div>
+                
+                <div class="category">
+                    <div class="category-name">✧･ﾟ Galerie Intime ･ﾟ✧</div>
+                    <div class="channel"><span class="channel-icon">#</span>🎀 tenue-coquine</div>
+                    <div class="channel"><span class="channel-icon">#</span>💝 corps-parfait</div>
+                    <div class="channel"><span class="channel-icon">#</span>🌺 beaute-nue</div>
+                    <div class="channel"><span class="channel-icon">#</span>✨ art-erotique</div>
+                </div>
+                
+                <div class="category">
+                    <div class="category-name">✧･ﾟ Chambre Rouge ･ﾟ✧</div>
+                    <div class="channel"><span class="channel-icon">#</span>🔞 plaisir-intense</div>
+                    <div class="channel"><span class="channel-icon">#</span>💦 extase</div>
+                    <div class="channel"><span class="channel-icon">#</span>🔥 chaleur-nocturne</div>
+                </div>
+            </div>
+            <div class="ping-example">
+                ✅ Exemple: #doux-peches #corps-parfait #extase
+            </div>
+        </div>
+        
+        <!-- STYLE 3: Violet Luxe -->
+        <div class="style-box">
+            <div class="style-header style3-header">
+                💜 Style 3: Violet Luxe
+            </div>
+            <div class="style-description">
+                <strong>Font:</strong> Cinzel (Majestueux & Luxueux)<br>
+                <strong>Couleur:</strong> Violet #ab47bc<br>
+                <strong>Style:</strong> Élégance royale avec majuscules
+            </div>
+            <div class="discord-preview style3">
+                <div class="category">
+                    <div class="category-name">◆ TEMPLE DU DÉSIR ◆</div>
+                    <div class="channel"><span class="channel-icon">#</span>👑 luxure</div>
+                    <div class="channel"><span class="channel-icon">#</span>💎 volupte</div>
+                    <div class="channel"><span class="channel-icon">#</span>🍷 ivresse-sensuelle</div>
+                    <div class="channel"><span class="channel-icon">#</span>⚜️ plaisirs-royaux</div>
+                </div>
+                
+                <div class="category">
+                    <div class="category-name">◆ CABINET PRIVÉ ◆</div>
+                    <div class="channel"><span class="channel-icon">#</span>🎭 masques-sensuels</div>
+                    <div class="channel"><span class="channel-icon">#</span>👗 dentelle-soie</div>
+                    <div class="channel"><span class="channel-icon">#</span>💄 seduction</div>
+                    <div class="channel"><span class="channel-icon">#</span>🌹 corps-divins</div>
+                </div>
+                
+                <div class="category">
+                    <div class="category-name">◆ SANCTUAIRE INTERDIT ◆</div>
+                    <div class="channel"><span class="channel-icon">#</span>🔮 mysteres-charnels</div>
+                    <div class="channel"><span class="channel-icon">#</span>🌙 nuits-folles</div>
+                    <div class="channel"><span class="channel-icon">#</span>💜 passion-violette</div>
+                </div>
+            </div>
+            <div class="ping-example">
+                ✅ Exemple: #luxure #seduction #nuits-folles
+            </div>
+        </div>
+        
+        <!-- STYLE 4: Noir Élégant -->
+        <div class="style-box">
+            <div class="style-header style4-header">
+                🖤 Style 4: Noir Élégant
+                <span class="recommendation">🔥 TRÈS SEXY</span>
+            </div>
+            <div class="style-description">
+                <strong>Font:</strong> Bodoni Moda (Sophistiqué & Classe)<br>
+                <strong>Couleur:</strong> Blanc #ffffff<br>
+                <strong>Style:</strong> Minimaliste chic et mystérieux
+            </div>
+            <div class="discord-preview style4">
+                <div class="category">
+                    <div class="category-name">━━━━━ ◈ ENVIES ◈ ━━━━━</div>
+                    <div class="channel"><span class="channel-icon">#</span>🥀 dark-desire</div>
+                    <div class="channel"><span class="channel-icon">#</span>🖤 velours-noir</div>
+                    <div class="channel"><span class="channel-icon">#</span>🕷️ tentations</div>
+                    <div class="channel"><span class="channel-icon">#</span>⚡ frissons</div>
+                </div>
+                
+                <div class="category">
+                    <div class="category-name">━━━━━ ◈ EXHIBITION ◈ ━━━━━</div>
+                    <div class="channel"><span class="channel-icon">#</span>🌑 ombres-sensuelles</div>
+                    <div class="channel"><span class="channel-icon">#</span>🔗 cuir-chaine</div>
+                    <div class="channel"><span class="channel-icon">#</span>💀 beaute-obscure</div>
+                    <div class="channel"><span class="channel-icon">#</span>🦇 nuit-erotique</div>
+                </div>
+                
+                <div class="category">
+                    <div class="category-name">━━━━━ ◈ PARADIS NOIR ◈ ━━━━━</div>
+                    <div class="channel"><span class="channel-icon">#</span>⛓️ dominance</div>
+                    <div class="channel"><span class="channel-icon">#</span>🌪️ tempete-sensuelle</div>
+                    <div class="channel"><span class="channel-icon">#</span>🗝️ secrets-intimes</div>
+                </div>
+            </div>
+            <div class="ping-example">
+                ✅ Exemple: #dark-desire #beaute-obscure #dominance
+            </div>
+        </div>
+        
+        <!-- STYLE 5: Feu Sensuel -->
+        <div class="style-box">
+            <div class="style-header style5-header">
+                🔥 Style 5: Feu Sensuel
+            </div>
+            <div class="style-description">
+                <strong>Font:</strong> Playfair Display (Chaleureux & Intense)<br>
+                <strong>Couleur:</strong> Orange brûlant #ff6e40<br>
+                <strong>Style:</strong> Passion ardente avec flammes
+            </div>
+            <div class="discord-preview style5">
+                <div class="category">
+                    <div class="category-name">🔥 ═══ BRASIER ═══ 🔥</div>
+                    <div class="channel"><span class="channel-icon">#</span>💥 explosion-sensuelle</div>
+                    <div class="channel"><span class="channel-icon">#</span>🌶️ epices-interdites</div>
+                    <div class="channel"><span class="channel-icon">#</span>🔥 chaleur-intime</div>
+                    <div class="channel"><span class="channel-icon">#</span>⚡ electric-touch</div>
+                </div>
+                
+                <div class="category">
+                    <div class="category-name">🔥 ═══ SHOWCASE ═══ 🔥</div>
+                    <div class="channel"><span class="channel-icon">#</span>💋 rouge-passion</div>
+                    <div class="channel"><span class="channel-icon">#</span>🍒 corps-en-feu</div>
+                    <div class="channel"><span class="channel-icon">#</span>🌡️ temperature-max</div>
+                    <div class="channel"><span class="channel-icon">#</span>💃 danse-sensuelle</div>
+                </div>
+                
+                <div class="category">
+                    <div class="category-name">🔥 ═══ ENFER ROUGE ═══ 🔥</div>
+                    <div class="channel"><span class="channel-icon">#</span>🌋 eruption-hot</div>
+                    <div class="channel"><span class="channel-icon">#</span>🔞 inferno</div>
+                    <div class="channel"><span class="channel-icon">#</span>💦 vague-de-plaisir</div>
+                </div>
+            </div>
+            <div class="ping-example">
+                ✅ Exemple: #chaleur-intime #corps-en-feu #inferno
+            </div>
+        </div>
+    </div>
+    
+    <div class="footer">
+        <h2 style="margin-bottom: 15px;">🎯 Recommandations</h2>
+        <p style="max-width: 800px; margin: 0 auto; line-height: 1.8;">
+            <strong>⭐ Style 1 (Rouge Passion)</strong> : Le plus élégant et sensuel, parfait équilibre<br>
+            <strong>🔥 Style 4 (Noir Élégant)</strong> : Pour un serveur très classe et mystérieux<br>
+            <strong>💜 Style 3 (Violet Luxe)</strong> : Pour une ambiance VIP et exclusive<br><br>
+            Tous les styles sont 100% pingables avec # devant le nom du channel !
+        </p>
+    </div>
+</body>
+</html>

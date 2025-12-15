@@ -1,0 +1,1541 @@
+const express = require('express');
+const multer = require('multer');
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const uploadsPath = path.join(__dirname, "../data/uploads");
+    if (!fs.existsSync(uploadsPath)) fs.mkdirSync(uploadsPath, { recursive: true });
+    cb(null, uploadsPath);
+  },
+  filename: (req, file, cb) => {
+    const timestamp = Date.now();
+    const ext = path.extname(file.originalname);
+    const basename = path.basename(file.originalname, ext);
+    cb(null, `${timestamp}-${basename}${ext}`);
+  }
+});
+const upload = multer({ storage: storage, limits: { fileSize: 50 * 1024 * 1024 } });
+// Configuration multer corrigée - voir plus bas
+const fs = require('fs');
+const path = require('path');
+const { exec } = require('child_process');
+const https = require('https');
+const app = express();
+const PORT = 3002;
+
+app.use(express.json());
+app.use(express.static('.'));
+
+const CONFIG = path.join(__dirname, '../data/config.json');
+const GUILD = '1360897918504271882';
+const BACKUP_DIR = path.join(__dirname, '../data/backups');
+
+// Discord API credentials
+const DISCORD_TOKEN = process.env.DISCORD_TOKEN;
+
+// Cache for channel names
+let channelsCache = null;
+let cacheTime = 0;
+let membersCache = null;
+let membersCacheTime = 0;
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
+// Helper function to read config
+function readConfig() {
+  try {
+    return JSON.parse(fs.readFileSync(CONFIG, 'utf8'));
+  } catch (err) {
+    console.error('Error reading config:', err);
+    return { guilds: {} };
+  }
+}
+
+// Helper function to write config
+function writeConfig(data) {
+  try {
+    fs.writeFileSync(CONFIG, JSON.stringify(data, null, 2), 'utf8');
+    return true;
+  } catch (err) {
+    console.error('Error writing config:', err);
+    return false;
+  }
+}
+
+// Fetch Discord channels
+function fetchDiscordChannels() {
+  return new Promise((resolve, reject) => {
+    const options = {
+      hostname: 'discord.com',
+      path: `/api/v10/guilds/${GUILD}/channels`,
+      method: 'GET',
+      headers: {
+        'Authorization': `Bot ${DISCORD_TOKEN}`,
+        'Content-Type': 'application/json'
+      }
+    };
+
+    https.get(options, (res) => {
+      let data = '';
+      res.on('data', chunk => data += chunk);
+      res.on('end', () => {
+        if (res.statusCode === 200) {
+          const channels = JSON.parse(data);
+          const channelMap = {};
+          channels.forEach(ch => {
+            channelMap[ch.id] = {
+              name: ch.name,
+              type: ch.type,
+              parent_id: ch.parent_id
+            };
+          });
+          resolve(channelMap);
+        } else {
+          reject(new Error(`Discord API error: ${res.statusCode}`));
+        }
+      });
+    }).on('error', reject);
+  });
+}
+
+// Get channels with caching
+async function getChannels() {
+  const now = Date.now();
+  if (channelsCache && (now - cacheTime) < CACHE_DURATION) {
+    return channelsCache;
+  }
+  
+  try {
+    channelsCache = await fetchDiscordChannels();
+    cacheTime = now;
+    return channelsCache;
+  } catch (err) {
+    console.error('Error fetching channels:', err);
+    return channelsCache || {};
+  }
+}
+
+// Get full guild config - MAIN ENDPOINT FOR DASHBOARD
+
+// Fetch Discord members
+function fetchDiscordMembers() {
+  return new Promise((resolve, reject) => {
+    const options = {
+      hostname: 'discord.com',
+      path: '/api/v10/guilds/' + GUILD + '/members?limit=1000',
+      method: 'GET',
+      headers: {
+        'Authorization': 'Bot ' + DISCORD_TOKEN,
+        'Content-Type': 'application/json'
+      }
+    };
+
+    https.get(options, (res) => {
+      let data = '';
+      res.on('data', chunk => data += chunk);
+      res.on('end', () => {
+        if (res.statusCode === 200) {
+          const members = JSON.parse(data);
+          const memberMap = {};
+          members.forEach(m => {
+            memberMap[m.user.id] = m.user.username || m.user.global_name || 'Inconnu';
+          });
+          resolve(memberMap);
+        } else {
+          reject(new Error('Discord API error: ' + res.statusCode));
+        }
+      });
+    }).on('error', reject);
+  });
+}
+
+// Get members with caching
+async function getMembers() {
+  const now = Date.now();
+  if (membersCache && (now - membersCacheTime) < CACHE_DURATION) {
+    return membersCache;
+  }
+  
+  try {
+    membersCache = await fetchDiscordMembers();
+    membersCacheTime = now;
+    return membersCache;
+  } catch (err) {
+    console.error('Error fetching members:', err);
+    return membersCache || {};
+  }
+}
+
+app.get('/api/configs', async (req, res) => {
+  try {
+    const config = readConfig();
+    const guildConfig = config.guilds[GUILD] || {};
+    
+    // Add channel names if requested
+    if (req.query.include_channels === 'true') {
+      const channels = await getChannels();
+      guildConfig._channels = channels;
+    }
+    
+    res.json(guildConfig);
+  } catch (err) {
+    console.error('Error in /api/configs:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Get Discord channels
+app.get('/api/discord/channels', async (req, res) => {
+  try {
+    const channels = await getChannels();
+    res.json(channels);
+  } catch (err) {
+    console.error('Error fetching Discord channels:', err);
+    res.status(500).json({ error: 'Failed to fetch channels' });
+  }
+});
+
+// Legacy endpoints for backward compatibility
+
+// Get Discord members
+app.get('/api/discord/members', async (req, res) => {
+  try {
+    const members = await getMembers();
+    res.json(members);
+  } catch (err) {
+    console.error('Error fetching Discord members:', err);
+    res.status(500).json({ error: 'Failed to fetch members' });
+  }
+})
+// Roles Discord API
+const rolesCache = { data: null, timestamp: 0 };
+const ROLES_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+function fetchDiscordRoles() {
+  return new Promise((resolve, reject) => {
+    const options = {
+      hostname: 'discord.com',
+      path: `/api/v10/guilds/${GUILD}/roles`,
+      method: 'GET',
+      headers: {
+        'Authorization': `Bot ${DISCORD_TOKEN}`,
+        'Content-Type': 'application/json'
+      }
+    };
+
+    https.get(options, (res) => {
+      let data = '';
+      res.on('data', chunk => data += chunk);
+      res.on('end', () => {
+        if (res.statusCode === 200) {
+          const roles = JSON.parse(data);
+          const rolesMap = {};
+          roles.forEach(role => {
+            rolesMap[role.id] = { name: role.name, color: role.color, position: role.position };
+          });
+          console.log(`✅ Roles récupérés: ${Object.keys(rolesMap).length}`);
+          resolve(rolesMap);
+        } else {
+          console.error('Discord API error:', res.statusCode);
+          reject(new Error('Discord API error: ' + res.statusCode));
+        }
+      });
+    }).on('error', reject);
+  });
+}
+
+async function getRoles() {
+  const now = Date.now();
+  if (rolesCache.data && (now - rolesCache.timestamp) < ROLES_CACHE_TTL) {
+    return rolesCache.data;
+  }
+  
+  try {
+    const roles = await fetchDiscordRoles();
+    rolesCache.data = roles;
+    rolesCache.timestamp = now;
+    return roles;
+  } catch (err) {
+    console.error('Error fetching roles:', err);
+    return rolesCache.data || {};
+  }
+}
+
+app.get('/api/discord/roles', async (req, res) => {
+  try {
+    const roles = await getRoles();
+    res.json(roles);
+  } catch (error) {
+    console.error('Error in /api/discord/roles:', error);
+    res.status(500).json({ error: 'Failed to fetch roles' });
+  }
+});
+
+;
+app.get('/api/config', (req, res) => {
+  try {
+    const config = readConfig();
+    res.json(config.guilds[GUILD] || {});
+  } catch (err) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.get('/api/config/:section', (req, res) => {
+  try {
+    const config = readConfig();
+    const section = req.params.section;
+    res.json(config.guilds[GUILD]?.[section] || {});
+  } catch (err) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Update economy settings
+app.post('/api/economy', (req, res) => {
+  try {
+    const config = readConfig();
+    if (!config.guilds[GUILD]) config.guilds[GUILD] = {};
+    if (!config.guilds[GUILD].economy) config.guilds[GUILD].economy = {};
+    
+    if (req.body.settings) {
+      config.guilds[GUILD].economy.settings = {
+        ...config.guilds[GUILD].economy.settings,
+        ...req.body.settings
+      };
+    }
+    
+    if (req.body.currency) {
+      config.guilds[GUILD].economy.currency = {
+        ...config.guilds[GUILD].economy.currency,
+        ...req.body.currency
+      };
+    }
+    
+    if (writeConfig(config)) {
+      res.json({ success: true });
+    } else {
+      res.status(500).json({ error: 'Failed to save config' });
+    }
+  } catch (err) {
+    console.error('Error updating economy:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Update tickets configuration
+app.post('/api/tickets', (req, res) => {
+  try {
+    const config = readConfig();
+    if (!config.guilds[GUILD]) config.guilds[GUILD] = {};
+    if (!config.guilds[GUILD].tickets) config.guilds[GUILD].tickets = {};
+    
+    // Update categories if provided
+    if (req.body.categories !== undefined) {
+      config.guilds[GUILD].tickets.categories = req.body.categories;
+    }
+    
+    // Update other ticket settings if provided
+    if (req.body.settings) {
+      config.guilds[GUILD].tickets = {
+        ...config.guilds[GUILD].tickets,
+        ...req.body.settings
+      };
+    }
+    
+    if (writeConfig(config)) {
+      res.json({ success: true });
+    } else {
+      res.status(500).json({ error: 'Failed to save config' });
+    }
+  } catch (err) {
+    console.error('Error updating tickets:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Update confess configuration
+app.post('/api/confess', (req, res) => {
+  try {
+    const config = readConfig();
+    if (!config.guilds[GUILD]) config.guilds[GUILD] = {};
+    if (!config.guilds[GUILD].confess) config.guilds[GUILD].confess = {};
+    
+    // Update confess settings
+    if (req.body.settings) {
+      config.guilds[GUILD].confess = {
+        ...config.guilds[GUILD].confess,
+        ...req.body.settings
+      };
+    }
+    
+    if (writeConfig(config)) {
+      res.json({ success: true });
+    } else {
+      res.status(500).json({ error: 'Failed to save config' });
+    }
+  } catch (err) {
+    console.error('Error updating confess:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Load welcome/goodbye routes
+require('./welcome-routes')(app, readConfig, writeConfig, GUILD);
+
+// ========== API MUSIQUE ==========
+
+// GET /api/music - Récupérer les playlists et uploads
+app.get('/api/music', (req, res) => {
+  try {
+    const playlistsPath = path.join(__dirname, '../data/playlists');
+    const uploadsPath = path.join(__dirname, '../data/uploads');
+    
+    const playlists = [];
+    if (fs.existsSync(playlistsPath)) {
+      fs.readdirSync(playlistsPath).forEach(file => {
+        if (file.endsWith('.json')) {
+          try {
+            const data = JSON.parse(fs.readFileSync(path.join(playlistsPath, file), 'utf8'));
+            playlists.push({
+              name: data.name,
+              guildId: data.guildId,
+              trackCount: data.tracks.length,
+              updatedAt: data.updatedAt
+            });
+          } catch (e) {}
+        }
+      });
+    }
+    
+    const uploads = [];
+    if (fs.existsSync(uploadsPath)) {
+      fs.readdirSync(uploadsPath).forEach(file => {
+        const stats = fs.statSync(path.join(uploadsPath, file));
+        uploads.push({
+          filename: file,
+          size: stats.size,
+          uploadedAt: stats.mtime
+        });
+      });
+    }
+    
+    res.json({ playlists, uploads });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// POST /api/music/playlist - Créer/modifier une playlist
+app.post('/api/music/playlist', (req, res) => {
+  try {
+    const { guildId, name, tracks } = req.body;
+    const playlistsPath = path.join(__dirname, '../data/playlists');
+    
+    if (!fs.existsSync(playlistsPath)) {
+      fs.mkdirSync(playlistsPath, { recursive: true });
+    }
+    
+    const playlist = {
+      name,
+      guildId,
+      tracks: tracks || [],
+      createdAt: Date.now(),
+      updatedAt: Date.now()
+    };
+    
+    const filename = `${guildId}-${name.replace(/[^a-z0-9]/gi, '_')}.json`;
+    fs.writeFileSync(path.join(playlistsPath, filename), JSON.stringify(playlist, null, 2));
+    
+    res.json({ ok: true, filename });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// POST /api/music/upload - Upload un fichier audio
+app.post('/api/music/upload', upload.single('audio'), (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'Aucun fichier' });
+    }
+    
+    const uploadsPath = path.join(__dirname, '../data/uploads');
+    if (!fs.existsSync(uploadsPath)) {
+      fs.mkdirSync(uploadsPath, { recursive: true });
+    }
+    
+    const filename = `${Date.now()}-${req.file.originalname}`;
+    fs.renameSync(req.file.path, path.join(uploadsPath, filename));
+    
+    res.json({ ok: true, filename, url: `/uploads/${filename}` });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// DELETE /api/music/playlist/:guildId/:name
+app.delete('/api/music/playlist/:guildId/:name', (req, res) => {
+  try {
+    const { guildId, name } = req.params;
+    const playlistsPath = path.join(__dirname, '../data/playlists');
+    const filename = `${guildId}-${name.replace(/[^a-z0-9]/gi, '_')}.json`;
+    const filepath = path.join(playlistsPath, filename);
+    
+    if (fs.existsSync(filepath)) {
+      fs.unlinkSync(filepath);
+      res.json({ ok: true });
+    } else {
+      res.status(404).json({ error: 'Playlist non trouvée' });
+    }
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// List backups
+
+app.get("/backup", (req, res) => {
+  try {
+    if (!fs.existsSync(BACKUP_DIR)) {
+      return res.json({ backups: [] });
+    }
+    
+    const files = fs.readdirSync(BACKUP_DIR)
+      .filter(f => f.endsWith('.json'))
+      .map(f => {
+        const stats = fs.statSync(path.join(BACKUP_DIR, f));
+        return {
+          filename: f,
+          date: stats.mtime.toLocaleString('fr-FR'),
+          size: (stats.size / 1024).toFixed(2) + ' KB'
+        };
+      })
+      .sort((a, b) => b.filename.localeCompare(a.filename));
+    
+    res.json({ backups: files });
+  } catch (err) {
+    console.error('Error listing backups:', err);
+    res.json({ backups: [] });
+  }
+});
+
+
+// List backups with display names (like /restore command)
+app.get("/backups", (req, res) => {
+  try {
+    if (!fs.existsSync(BACKUP_DIR)) {
+      return res.json({ backups: [] });
+    }
+    
+    const files = fs.readdirSync(BACKUP_DIR)
+      .filter(f => f.endsWith(".json"))
+      .map(f => {
+        const stats = fs.statSync(path.join(BACKUP_DIR, f));
+        const low = f.toLowerCase();
+        
+        let type = 'other';
+        let typeLabel = 'Backup';
+        let typeEmoji = '📦';
+        
+        if (low.startsWith('config-external-')) {
+          type = 'external';
+          typeLabel = 'Externe horaire';
+          typeEmoji = '⏰';
+        } else if (low.startsWith('config-global-')) {
+          type = 'global';
+          typeLabel = 'Global auto';
+          typeEmoji = '🌐';
+        } else if (low.startsWith('config-')) {
+          type = 'manual';
+          typeLabel = 'Manuel';
+          typeEmoji = '👤';
+        } else if (low.startsWith('backup-freebox-') || low.startsWith('freebox-')) {
+          type = 'freebox';
+          typeLabel = 'Freebox';
+          typeEmoji = '📦';
+        } else if (low.startsWith('backup-local-')) {
+          type = 'local';
+          typeLabel = 'Local auto';
+          typeEmoji = '💾';
+        } else if (low.startsWith('pre-restore-')) {
+          type = 'safety';
+          typeLabel = 'Sécurité';
+          typeEmoji = '🛡️';
+        } else if (low.startsWith('backup-test-')) {
+          type = 'test';
+          typeLabel = 'Test';
+          typeEmoji = '🧪';
+        } else if (low.startsWith('full-restore-')) {
+          type = 'full';
+          typeLabel = 'Full Restore';
+          typeEmoji = '🔄';
+        } else if (low.startsWith('bot-data-')) {
+          type = 'botdata';
+          typeLabel = 'Bot Data';
+          typeEmoji = '🤖';
+        } else if (low.startsWith('td-queues-')) {
+          type = 'tdqueues';
+          typeLabel = 'TD Queues';
+          typeEmoji = '🎲';
+        } else if (low.startsWith('backup-')) {
+          type = 'auto';
+          typeLabel = 'Auto';
+          typeEmoji = '🤖';
+        }
+        
+        const labelDate = stats.mtime.toLocaleString('fr-FR');
+        const sizeKB = Math.round(stats.size / 1024);
+        const displayName = typeEmoji + ' ' + typeLabel + ' • ' + labelDate + ' • ' + sizeKB + ' KB';
+        
+        return {
+          filename: f,
+          date: stats.mtime.toLocaleString("fr-FR"),
+          size: (stats.size / 1024).toFixed(2) + " KB",
+          displayName: displayName,
+          type: type,
+          typeEmoji: typeEmoji,
+          typeLabel: typeLabel,
+          timestamp: stats.mtime.toISOString()
+        };
+      })
+      .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+    
+    res.json({ backups: files });
+  } catch (err) {
+    console.error("Error listing backups:", err);
+    res.json({ backups: [] });
+  }
+});
+
+// Create backup
+app.post('/backup', (req, res) => {
+  try {
+    if (!fs.existsSync(BACKUP_DIR)) {
+      fs.mkdirSync(BACKUP_DIR, { recursive: true });
+    }
+    
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+    const filename = `backup-${timestamp}.json`;
+    const backupPath = path.join(BACKUP_DIR, filename);
+    
+    const config = readConfig();
+    fs.writeFileSync(backupPath, JSON.stringify(config, null, 2), 'utf8');
+    
+    res.json({ success: true, filename });
+  } catch (err) {
+    console.error('Error creating backup:', err);
+    res.status(500).json({ error: 'Failed to create backup' });
+  }
+});
+
+// Restore backup
+app.post('/restore', (req, res) => {
+  try {
+    const { filename } = req.body;
+    if (!filename) {
+      return res.status(400).json({ error: 'Filename required' });
+    }
+    
+    const backupPath = path.join(BACKUP_DIR, filename);
+    if (!fs.existsSync(backupPath)) {
+      return res.status(404).json({ error: 'Backup not found' });
+    }
+    
+    const backupData = JSON.parse(fs.readFileSync(backupPath, 'utf8'));
+    
+    // Create a backup of current config before restoring
+    const currentBackupPath = path.join(BACKUP_DIR, `pre-restore-${Date.now()}.json`);
+    fs.writeFileSync(currentBackupPath, fs.readFileSync(CONFIG, 'utf8'));
+    
+    // Restore the backup
+    fs.writeFileSync(CONFIG, JSON.stringify(backupData, null, 2), 'utf8');
+    
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Error restoring backup:', err);
+    res.status(500).json({ error: 'Failed to restore backup' });
+  }
+});
+
+// POST /api/levels - Update levels configuration
+app.post('/api/levels', (req, res) => {
+  try {
+    const config = readConfig();
+    if (!config.guilds[GUILD]) config.guilds[GUILD] = {};
+    if (!config.guilds[GUILD].levels) config.guilds[GUILD].levels = {};
+    
+    const updates = req.body;
+    
+    // Update simple fields
+    if (updates.enabled !== undefined) config.guilds[GUILD].levels.enabled = updates.enabled;
+    if (updates.xpPerMessage !== undefined) config.guilds[GUILD].levels.xpPerMessage = updates.xpPerMessage;
+    if (updates.xpPerVoiceMinute !== undefined) config.guilds[GUILD].levels.xpPerVoiceMinute = updates.xpPerVoiceMinute;
+    if (updates.xpMessageMin !== undefined) config.guilds[GUILD].levels.xpMessageMin = updates.xpMessageMin;
+    if (updates.xpMessageMax !== undefined) config.guilds[GUILD].levels.xpMessageMax = updates.xpMessageMax;
+    if (updates.xpVoiceMin !== undefined) config.guilds[GUILD].levels.xpVoiceMin = updates.xpVoiceMin;
+    if (updates.xpVoiceMax !== undefined) config.guilds[GUILD].levels.xpVoiceMax = updates.xpVoiceMax;
+    if (updates.voiceCooldownSec !== undefined) config.guilds[GUILD].levels.voiceCooldownSec = updates.voiceCooldownSec;
+    if (updates.messageCooldownSec !== undefined) config.guilds[GUILD].levels.messageCooldownSec = updates.messageCooldownSec;
+    
+    // Update level curve
+    if (updates.levelCurve) {
+      if (!config.guilds[GUILD].levels.levelCurve) config.guilds[GUILD].levels.levelCurve = {};
+      if (updates.levelCurve.base !== undefined) config.guilds[GUILD].levels.levelCurve.base = updates.levelCurve.base;
+      if (updates.levelCurve.factor !== undefined) config.guilds[GUILD].levels.levelCurve.factor = updates.levelCurve.factor;
+    }
+    
+    // Update rewards (dict niveau -> roleId)
+    if (updates.rewards) {
+      config.guilds[GUILD].levels.rewards = updates.rewards;
+    }
+    
+    // Update announce settings
+    if (updates.announce) {
+      if (!config.guilds[GUILD].levels.announce) config.guilds[GUILD].levels.announce = {};
+      
+      if (updates.announce.levelUp) {
+        if (!config.guilds[GUILD].levels.announce.levelUp) config.guilds[GUILD].levels.announce.levelUp = {};
+        if (updates.announce.levelUp.enabled !== undefined) config.guilds[GUILD].levels.announce.levelUp.enabled = updates.announce.levelUp.enabled;
+        if (updates.announce.levelUp.channelId !== undefined) config.guilds[GUILD].levels.announce.levelUp.channelId = updates.announce.levelUp.channelId;
+        if (updates.announce.levelUp.template !== undefined) config.guilds[GUILD].levels.announce.levelUp.template = updates.announce.levelUp.template;
+      }
+      
+      if (updates.announce.roleAward) {
+        if (!config.guilds[GUILD].levels.announce.roleAward) config.guilds[GUILD].levels.announce.roleAward = {};
+        if (updates.announce.roleAward.enabled !== undefined) config.guilds[GUILD].levels.announce.roleAward.enabled = updates.announce.roleAward.enabled;
+        if (updates.announce.roleAward.channelId !== undefined) config.guilds[GUILD].levels.announce.roleAward.channelId = updates.announce.roleAward.channelId;
+        if (updates.announce.roleAward.template !== undefined) config.guilds[GUILD].levels.announce.roleAward.template = updates.announce.roleAward.template;
+      }
+    }
+    
+    // Update cards configuration
+    if (updates.cards) {
+      if (!config.guilds[GUILD].levels.cards) config.guilds[GUILD].levels.cards = {};
+      
+      if (updates.cards.femaleRoleIds !== undefined) config.guilds[GUILD].levels.cards.femaleRoleIds = updates.cards.femaleRoleIds;
+      if (updates.cards.certifiedRoleIds !== undefined) config.guilds[GUILD].levels.cards.certifiedRoleIds = updates.cards.certifiedRoleIds;
+      
+      if (updates.cards.backgrounds) {
+        if (!config.guilds[GUILD].levels.cards.backgrounds) config.guilds[GUILD].levels.cards.backgrounds = {};
+        Object.assign(config.guilds[GUILD].levels.cards.backgrounds, updates.cards.backgrounds);
+      }
+      
+      if (updates.cards.perRoleBackgrounds !== undefined) {
+        config.guilds[GUILD].levels.cards.perRoleBackgrounds = updates.cards.perRoleBackgrounds;
+      }
+    }
+    
+    if (writeConfig(config)) {
+      res.json({ success: true });
+    } else {
+      res.status(500).json({ error: 'Failed to save config' });
+    }
+  } catch (err) {
+    console.error('Error updating levels:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+
+// Bot control
+app.post('/bot/control', (req, res) => {
+  try {
+    const { action } = req.body;
+    
+    if (action === 'restart') {
+      // Restart the bot using PM2
+      exec('pm2 restart bag-bot', (error, stdout, stderr) => {
+        if (error) {
+          console.error('Error restarting bot:', error);
+        }
+      });
+      res.json({ success: true, message: 'Bot restart initiated' });
+    } else if (action === 'deploy') {
+      // Deploy commands
+      exec('cd /home/bagbot/Bag-bot && node deploy-commands.js', (error, stdout, stderr) => {
+        if (error) {
+          console.error('Error deploying commands:', error);
+        }
+      });
+      res.json({ success: true, message: 'Command deployment initiated' });
+    } else {
+      res.status(400).json({ error: 'Unknown action' });
+    }
+  } catch (err) {
+    console.error('Error in bot control:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Health check
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+// ========== CONFIGURATION MULTER POUR UPLOADS ==========
+
+app.get('/api/music', (req, res) => {
+  try {
+    const playlistsPath = path.join(__dirname, '../data/playlists');
+    const uploadsPath = path.join(__dirname, '../data/uploads');
+    
+    const playlists = [];
+    if (fs.existsSync(playlistsPath)) {
+      fs.readdirSync(playlistsPath).forEach(file => {
+        if (file.endsWith('.json')) {
+          try {
+            const data = JSON.parse(fs.readFileSync(path.join(playlistsPath, file), 'utf8'));
+            playlists.push({
+              name: data.name,
+              guildId: data.guildId,
+              trackCount: (data.tracks || []).length,
+              updatedAt: data.updatedAt || Date.now()
+            });
+          } catch (e) {
+            console.error(`Erreur lecture playlist ${file}:`, e);
+          }
+        }
+      });
+    }
+    
+    const uploads = [];
+    let totalSize = 0;
+    if (fs.existsSync(uploadsPath)) {
+      fs.readdirSync(uploadsPath).forEach(file => {
+        try {
+          const stats = fs.statSync(path.join(uploadsPath, file));
+          uploads.push({
+            filename: file,
+            size: stats.size,
+            uploadedAt: stats.mtimeMs
+          });
+          totalSize += stats.size;
+        } catch (e) {
+          console.error(`Erreur stats ${file}:`, e);
+        }
+      });
+    }
+    
+    res.json({ playlists, uploads, totalSize });
+  } catch (error) {
+    console.error('Erreur API /api/music:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// GET /api/music/playlist/:guildId/:name - Détail d'une playlist
+app.get('/api/music/playlist/:guildId/:name', (req, res) => {
+  try {
+    const { guildId, name } = req.params;
+    const playlistsPath = path.join(__dirname, '../data/playlists');
+    
+    if (!fs.existsSync(playlistsPath)) {
+      return res.status(404).json({ error: 'Aucune playlist' });
+    }
+    
+    const files = fs.readdirSync(playlistsPath);
+    const playlistFile = files.find(f => {
+      try {
+        const data = JSON.parse(fs.readFileSync(path.join(playlistsPath, f), 'utf8'));
+        return data.guildId === guildId && data.name === name;
+      } catch (e) {
+        return false;
+      }
+    });
+    
+    if (playlistFile) {
+      const data = JSON.parse(fs.readFileSync(path.join(playlistsPath, playlistFile), 'utf8'));
+      res.json(data);
+    } else {
+      res.status(404).json({ error: 'Playlist non trouvée' });
+    }
+  } catch (error) {
+    console.error('Erreur détail playlist:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// POST /api/music/upload - Upload fichier audio
+app.post('/api/music/upload', upload.single('audio'), (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'Aucun fichier' });
+    }
+    console.log('Fichier uploadé:', req.file.filename);
+    res.json({ ok: true, filename: req.file.filename });
+  } catch (error) {
+    console.error('Erreur upload:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// DELETE /api/music/upload/:filename - Supprimer un fichier uploadé
+app.delete('/api/music/upload/:filename', (req, res) => {
+  try {
+    const { filename } = req.params;
+    const uploadsPath = path.join(__dirname, '../data/uploads');
+    const filepath = path.join(uploadsPath, filename);
+    
+    if (fs.existsSync(filepath)) {
+      fs.unlinkSync(filepath);
+      console.log('Fichier supprimé:', filename);
+      res.json({ success: true });
+    } else {
+      res.status(404).json({ error: 'Fichier non trouvé' });
+    }
+  } catch (error) {
+    console.error('Erreur suppression fichier:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// PUT /api/music/playlist/:guildId/:name - Renommer une playlist
+app.put('/api/music/playlist/:guildId/:name', (req, res) => {
+  try {
+    const { guildId, name } = req.params;
+    const { newName } = req.body;
+    
+    if (!newName || newName.trim() === '') {
+      return res.status(400).json({ error: 'Nouveau nom requis' });
+    }
+    
+    const playlistsPath = path.join(__dirname, '../data/playlists');
+    const files = fs.readdirSync(playlistsPath);
+    
+    const playlistFile = files.find(f => {
+      try {
+        const data = JSON.parse(fs.readFileSync(path.join(playlistsPath, f), 'utf8'));
+        return data.guildId === guildId && data.name === name;
+      } catch (e) {
+        return false;
+      }
+    });
+    
+    if (playlistFile) {
+      const filepath = path.join(playlistsPath, playlistFile);
+      const data = JSON.parse(fs.readFileSync(filepath, 'utf8'));
+      
+      // Vérifier qu'aucune autre playlist n'a ce nom
+      const nameExists = files.some(f => {
+        if (f === playlistFile) return false;
+        try {
+          const otherData = JSON.parse(fs.readFileSync(path.join(playlistsPath, f), 'utf8'));
+          return otherData.guildId === guildId && otherData.name === newName.trim();
+        } catch (e) {
+          return false;
+        }
+      });
+      
+      if (nameExists) {
+        return res.status(400).json({ error: 'Une playlist avec ce nom existe déjà' });
+      }
+      
+      data.name = newName.trim();
+      data.updatedAt = Date.now();
+      
+      const newFilename = `${guildId}-${newName.trim().replace(/[^a-zA-Z0-9-_]/g, '_')}.json`;
+      const newFilepath = path.join(playlistsPath, newFilename);
+      
+      fs.writeFileSync(newFilepath, JSON.stringify(data, null, 2));
+      if (filepath !== newFilepath) {
+        fs.unlinkSync(filepath);
+      }
+      
+      console.log(`Playlist renommée: ${name} -> ${newName}`);
+      res.json({ success: true, playlist: data });
+    } else {
+      res.status(404).json({ error: 'Playlist non trouvée' });
+    }
+  } catch (error) {
+    console.error('Erreur renommage playlist:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// DELETE /api/music/playlist/:guildId/:name - Supprimer une playlist
+app.delete('/api/music/playlist/:guildId/:name', (req, res) => {
+  try {
+    const { guildId, name } = req.params;
+    const playlistsPath = path.join(__dirname, '../data/playlists');
+    
+    const files = fs.readdirSync(playlistsPath);
+    const playlistFile = files.find(f => {
+      try {
+        const data = JSON.parse(fs.readFileSync(path.join(playlistsPath, f), 'utf8'));
+        return data.guildId === guildId && data.name === name;
+      } catch (e) {
+        return false;
+      }
+    });
+    
+    if (playlistFile) {
+      fs.unlinkSync(path.join(playlistsPath, playlistFile));
+      console.log('Playlist supprimée:', name);
+      res.json({ success: true });
+    } else {
+      res.status(404).json({ error: 'Playlist non trouvée' });
+    }
+  } catch (error) {
+    console.error('Erreur suppression playlist:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// DELETE /api/music/playlist/:guildId/:name/track/:index - Supprimer une piste
+app.delete('/api/music/playlist/:guildId/:name/track/:index', (req, res) => {
+  try {
+    const { guildId, name, index } = req.params;
+    const playlistsPath = path.join(__dirname, '../data/playlists');
+    
+    const files = fs.readdirSync(playlistsPath);
+    const playlistFile = files.find(f => {
+      try {
+        const data = JSON.parse(fs.readFileSync(path.join(playlistsPath, f), 'utf8'));
+        return data.guildId === guildId && data.name === name;
+      } catch (e) {
+        return false;
+      }
+    });
+    
+    if (playlistFile) {
+      const filepath = path.join(playlistsPath, playlistFile);
+      const data = JSON.parse(fs.readFileSync(filepath, 'utf8'));
+      
+      const trackIndex = parseInt(index);
+      if (trackIndex >= 0 && trackIndex < data.tracks.length) {
+        const removedTrack = data.tracks.splice(trackIndex, 1)[0];
+        data.updatedAt = Date.now();
+        
+        fs.writeFileSync(filepath, JSON.stringify(data, null, 2));
+        console.log(`Piste supprimée: ${removedTrack.title}`);
+        res.json({ success: true });
+      } else {
+        res.status(404).json({ error: 'Piste non trouvée' });
+      }
+    } else {
+      res.status(404).json({ error: 'Playlist non trouvée' });
+    }
+  } catch (error) {
+    console.error('Erreur suppression piste:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+
+// POST /api/music/playlist/create - Créer une nouvelle playlist
+app.post('/api/music/playlist/create', (req, res) => {
+  try {
+    const { guildId, name } = req.body;
+    
+    if (!name || name.trim() === '') {
+      return res.status(400).json({ error: 'Nom de playlist requis' });
+    }
+    
+    const playlistsPath = path.join(__dirname, '../data/playlists');
+    if (!fs.existsSync(playlistsPath)) {
+      fs.mkdirSync(playlistsPath, { recursive: true });
+    }
+    
+    // Vérifier qu'aucune playlist n'a ce nom
+    const files = fs.readdirSync(playlistsPath);
+    const nameExists = files.some(f => {
+      try {
+        const data = JSON.parse(fs.readFileSync(path.join(playlistsPath, f), 'utf8'));
+        return data.guildId === guildId && data.name === name.trim();
+      } catch (e) {
+        return false;
+      }
+    });
+    
+    if (nameExists) {
+      return res.status(400).json({ error: 'Une playlist avec ce nom existe déjà' });
+    }
+    
+    const playlist = {
+      name: name.trim(),
+      guildId: guildId,
+      tracks: [],
+      createdAt: Date.now(),
+      updatedAt: Date.now()
+    };
+    
+    const filename = `${guildId}-${name.trim().replace(/[^a-zA-Z0-9-_]/g, '_')}.json`;
+    const filepath = path.join(playlistsPath, filename);
+    
+    fs.writeFileSync(filepath, JSON.stringify(playlist, null, 2));
+    console.log(`✅ Nouvelle playlist créée: ${name}`);
+    res.json({ success: true, playlist });
+  } catch (error) {
+    console.error('Erreur création playlist:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// POST /api/music/playlist/:guildId/:name/add - Ajouter une piste à une playlist
+app.post('/api/music/playlist/:guildId/:name/add', (req, res) => {
+  try {
+    const { guildId, name } = req.params;
+    const { filename, title, author, duration } = req.body;
+    
+    if (!filename) {
+      return res.status(400).json({ error: 'Nom de fichier requis' });
+    }
+    
+    const playlistsPath = path.join(__dirname, '../data/playlists');
+    const files = fs.readdirSync(playlistsPath);
+    
+    const playlistFile = files.find(f => {
+      try {
+        const data = JSON.parse(fs.readFileSync(path.join(playlistsPath, f), 'utf8'));
+        return data.guildId === guildId && data.name === name;
+      } catch (e) {
+        return false;
+      }
+    });
+    
+    if (playlistFile) {
+      const filepath = path.join(playlistsPath, playlistFile);
+      const data = JSON.parse(fs.readFileSync(filepath, 'utf8'));
+      
+      // Créer la piste avec les métadonnées
+      const track = {
+        title: title || filename.replace(/^\d+-/, '').replace(/\.[^.]+$/, ''),
+        author: author || 'Artiste inconnu',
+        filename: filename,
+        duration: duration || '0:00',
+        addedAt: Date.now()
+      };
+      
+      data.tracks.push(track);
+      data.updatedAt = Date.now();
+      
+      fs.writeFileSync(filepath, JSON.stringify(data, null, 2));
+      console.log(`✅ Piste ajoutée à ${name}: ${track.title}`);
+      res.json({ success: true, playlist: data });
+    } else {
+      res.status(404).json({ error: 'Playlist non trouvée' });
+    }
+  } catch (error) {
+    console.error('Erreur ajout piste:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+
+// Charger le router add-link
+require("./add-link-router")(app);
+
+
+
+// Route pour la page principale
+
+// Staff Management API
+app.get('/api/staff', (req, res) => {
+  try {
+    const config = readConfig();
+    const guildConfig = config.guilds[GUILD] || {};
+    res.json({
+      staffRoleIds: guildConfig.staffRoleIds || [],
+      quarantineRoleId: guildConfig.quarantineRoleId || null,
+      footerLogoUrl: guildConfig.footerLogoUrl || '',
+      categoryBanners: guildConfig.categoryBanners || {}
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.post('/api/staff', (req, res) => {
+  try {
+    const config = readConfig();
+    const guildConfig = config.guilds[GUILD] || {};
+    const { staffRoleIds, quarantineRoleId, footerLogoUrl, categoryBanners } = req.body;
+    
+    if (staffRoleIds) guildConfig.staffRoleIds = staffRoleIds;
+    if (quarantineRoleId !== undefined) guildConfig.quarantineRoleId = quarantineRoleId;
+    if (footerLogoUrl !== undefined) guildConfig.footerLogoUrl = footerLogoUrl;
+    if (categoryBanners) guildConfig.categoryBanners = categoryBanners;
+    
+    config.guilds[GUILD] = guildConfig;
+    writeConfig(config);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// AutoKick API
+app.get('/api/autokick', (req, res) => {
+  try {
+    const config = readConfig();
+    const autokick = config.guilds[GUILD]?.autokick || {};
+    res.json(autokick);
+  } catch (err) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.post('/api/autokick', (req, res) => {
+  try {
+    const config = readConfig();
+    const guildConfig = config.guilds[GUILD] || {};
+    guildConfig.autokick = req.body;
+    config.guilds[GUILD] = guildConfig;
+    writeConfig(config);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// AutoThread API
+app.get('/api/autothread', (req, res) => {
+  try {
+    const config = readConfig();
+    const autothread = config.guilds[GUILD]?.autothread || {};
+    res.json(autothread);
+  } catch (err) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.post('/api/autothread', (req, res) => {
+  try {
+    const config = readConfig();
+    const guildConfig = config.guilds[GUILD] || {};
+    guildConfig.autothread = req.body;
+    config.guilds[GUILD] = guildConfig;
+    writeConfig(config);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Disboard API
+app.get('/api/disboard', (req, res) => {
+  try {
+    const config = readConfig();
+    const disboard = config.guilds[GUILD]?.disboard || {};
+    res.json(disboard);
+  } catch (err) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.post('/api/disboard', (req, res) => {
+  try {
+    const config = readConfig();
+    const guildConfig = config.guilds[GUILD] || {};
+    guildConfig.disboard = req.body;
+    config.guilds[GUILD] = guildConfig;
+    writeConfig(config);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Geo API (read-only)
+app.get('/api/geo', (req, res) => {
+  try {
+    const config = readConfig();
+    const geo = config.guilds[GUILD]?.geo || {};
+    res.json(geo);
+  } catch (err) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// TruthDare (Action/Vérité) API
+app.get('/api/truthdare', (req, res) => {
+  try {
+    const config = readConfig();
+    const td = config.guilds[GUILD]?.truthdare || {};
+    
+    res.json({
+      sfw: {
+        channels: td.sfw?.channels || [],
+        prompts: td.sfw?.prompts || [],
+        rotation: td.sfw?.rotation || { action: 0, verite: 0 }
+      },
+      nsfw: {
+        channels: td.nsfw?.channels || [],
+        prompts: td.nsfw?.prompts || [],
+        rotation: td.nsfw?.rotation || { action: 0, verite: 0 }
+      }
+    });
+  } catch (err) {
+    console.error('Error in /api/truthdare:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.post('/api/truthdare', (req, res) => {
+  try {
+    const config = readConfig();
+    if (!config.guilds[GUILD]) config.guilds[GUILD] = {};
+    if (!config.guilds[GUILD].truthdare) config.guilds[GUILD].truthdare = { sfw: {}, nsfw: {} };
+    
+    const { mode, channels, prompts, action } = req.body;
+    
+    if (mode === 'sfw' || mode === 'nsfw') {
+      // Mise à jour des channels
+      if (channels !== undefined) {
+        config.guilds[GUILD].truthdare[mode].channels = channels;
+      }
+      
+      // Actions sur les prompts
+      if (action === 'add' && req.body.prompt) {
+        const currentPrompts = config.guilds[GUILD].truthdare[mode].prompts || [];
+        const maxId = currentPrompts.length > 0 ? Math.max(...currentPrompts.map(p => p.id || 0)) : 0;
+        currentPrompts.push({
+          id: maxId + 1,
+          type: req.body.prompt.type,
+          text: req.body.prompt.text
+        });
+        config.guilds[GUILD].truthdare[mode].prompts = currentPrompts;
+      } else if (action === 'delete' && req.body.promptId) {
+        const currentPrompts = config.guilds[GUILD].truthdare[mode].prompts || [];
+        config.guilds[GUILD].truthdare[mode].prompts = currentPrompts.filter(p => p.id !== req.body.promptId);
+      } else if (action === 'edit' && req.body.promptId && req.body.prompt) {
+        const currentPrompts = config.guilds[GUILD].truthdare[mode].prompts || [];
+        const idx = currentPrompts.findIndex(p => p.id === req.body.promptId);
+        if (idx !== -1) {
+          currentPrompts[idx].text = req.body.prompt.text;
+        }
+        config.guilds[GUILD].truthdare[mode].prompts = currentPrompts;
+      } else if (prompts !== undefined) {
+        // Remplacement complet des prompts
+        config.guilds[GUILD].truthdare[mode].prompts = prompts;
+      }
+    }
+    
+    writeConfig(config);
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Error updating truthdare:', err);
+    res.status(500).json({ error: 'Failed to update configuration' });
+  }
+});
+
+
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+// Route pour la page musique
+app.get('/music', (req, res) => {
+  res.sendFile(path.join(__dirname, 'music.html'));
+});
+
+app.listen(PORT, () => {
+  console.log(`✓ Dashboard V2 Server running on port ${PORT}`);
+  console.log(`✓ Guild ID: ${GUILD}`);
+  console.log(`✓ Config file: ${CONFIG}`);
+  console.log(`✓ Access: http://localhost:${PORT}`);
+  console.log(`✓ Discord API integration enabled`);
+});
+
+// ============================================
+// API ACTIONS (Messages personnalisés)
+// ============================================
+
+// GET - Récupérer toutes les actions et leurs messages
+app.get('/api/actions', (req, res) => {
+  try {
+    const config = readConfig();
+    const guild = config.guilds[GUILD] || {};
+    const economy = guild.economy || {};
+    const actions = economy.actions || {};
+    
+    res.json({
+      list: actions.list || {},
+      messages: actions.messages || {},
+      gifs: actions.gifs || {},
+      config: actions.config || {}
+    });
+  } catch (error) {
+    console.error('[API Actions] Erreur GET:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// POST - Mettre à jour les messages d'une action
+app.post('/api/actions/messages', (req, res) => {
+  try {
+    const { actionName, success, fail } = req.body;
+    
+    if (!actionName) {
+      return res.status(400).json({ error: 'actionName requis' });
+
+// POST - Mettre à jour les GIFs d'une action
+app.post('/api/actions/gifs', (req, res) => {
+  try {
+    const { actionName, success, fail } = req.body;
+    
+    if (!actionName) {
+      return res.status(400).json({ error: 'actionName requis' });
+    }
+    
+    const config = readConfig();
+    if (!config.guilds[GUILD]) config.guilds[GUILD] = {};
+    if (!config.guilds[GUILD].economy) config.guilds[GUILD].economy = {};
+    if (!config.guilds[GUILD].economy.actions) config.guilds[GUILD].economy.actions = {};
+    if (!config.guilds[GUILD].economy.actions.gifs) config.guilds[GUILD].economy.actions.gifs = {};
+    
+    // Initialiser l'action si elle n'existe pas
+    if (!config.guilds[GUILD].economy.actions.gifs[actionName]) {
+      config.guilds[GUILD].economy.actions.gifs[actionName] = { success: [], fail: [] };
+    }
+    
+    // Mettre à jour les GIFs
+    if (Array.isArray(success)) {
+      config.guilds[GUILD].economy.actions.gifs[actionName].success = success;
+    }
+    if (Array.isArray(fail)) {
+      config.guilds[GUILD].economy.actions.gifs[actionName].fail = fail;
+    }
+    
+    writeConfig(config);
+    res.json({ success: true });
+  } catch (error) {
+    console.error('[API Actions] Erreur POST gifs:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+    }
+    
+    const config = readConfig();
+    if (!config.guilds[GUILD]) config.guilds[GUILD] = {};
+    if (!config.guilds[GUILD].economy) config.guilds[GUILD].economy = {};
+    if (!config.guilds[GUILD].economy.actions) config.guilds[GUILD].economy.actions = {};
+    if (!config.guilds[GUILD].economy.actions.messages) config.guilds[GUILD].economy.actions.messages = {};
+    
+    // Initialiser l'action si elle n'existe pas
+    if (!config.guilds[GUILD].economy.actions.messages[actionName]) {
+      config.guilds[GUILD].economy.actions.messages[actionName] = { success: [], fail: [] };
+    }
+    
+    // Mettre à jour les messages
+    if (Array.isArray(success)) {
+      config.guilds[GUILD].economy.actions.messages[actionName].success = success;
+    }
+    if (Array.isArray(fail)) {
+      config.guilds[GUILD].economy.actions.messages[actionName].fail = fail;
+    }
+    
+    writeConfig(config);
+    res.json({ success: true });
+  } catch (error) {
+    console.error('[API Actions] Erreur POST messages:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+
+// ============================================
+// API ACTIONS (Messages personnalisés)
+// ============================================
+
+// GET - Récupérer toutes les actions et leurs messages
+app.get('/api/actions', (req, res) => {
+  try {
+    const config = readConfig();
+    const guild = config.guilds[GUILD] || {};
+    const economy = guild.economy || {};
+    const actions = economy.actions || {};
+    
+    res.json({
+      list: actions.list || {},
+      messages: actions.messages || {},
+      gifs: actions.gifs || {},
+      config: actions.config || {}
+    });
+  } catch (error) {
+    console.error('[API Actions] Erreur GET:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// POST - Mettre à jour les messages d'une action
+app.post('/api/actions/messages', (req, res) => {
+  try {
+    const { actionName, success, fail } = req.body;
+    
+    if (!actionName) {
+      return res.status(400).json({ error: 'actionName requis' });
+    }
+    
+    const config = readConfig();
+    if (!config.guilds[GUILD]) config.guilds[GUILD] = {};
+    if (!config.guilds[GUILD].economy) config.guilds[GUILD].economy = {};
+    if (!config.guilds[GUILD].economy.actions) config.guilds[GUILD].economy.actions = {};
+    if (!config.guilds[GUILD].economy.actions.messages) config.guilds[GUILD].economy.actions.messages = {};
+    
+    // Initialiser l'action si elle n'existe pas
+    if (!config.guilds[GUILD].economy.actions.messages[actionName]) {
+      config.guilds[GUILD].economy.actions.messages[actionName] = { success: [], fail: [] };
+    }
+    
+    // Mettre à jour les messages
+    if (Array.isArray(success)) {
+      config.guilds[GUILD].economy.actions.messages[actionName].success = success;
+    }
+    if (Array.isArray(fail)) {
+      config.guilds[GUILD].economy.actions.messages[actionName].fail = fail;
+    }
+    
+    writeConfig(config);
+    res.json({ success: true });
+  } catch (error) {
+    console.error('[API Actions] Erreur POST messages:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+
+// Update logs configuration
+app.post('/api/logs', (req, res) => {
+  try {
+    const config = readConfig();
+    if (!config.guilds[GUILD]) config.guilds[GUILD] = {};
+    
+    if (req.body.logs) {
+      config.guilds[GUILD].logs = {
+        ...config.guilds[GUILD].logs,
+        ...req.body.logs
+      };
+    }
+    
+    if (writeConfig(config)) {
+      res.json({ success: true });
+    } else {
+      res.status(500).json({ error: 'Failed to save config' });
+    }
+  } catch (err) {
+    console.error('Error updating logs:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Update autokick configuration
+app.post('/api/autokick', (req, res) => {
+  try {
+    const config = readConfig();
+    if (!config.guilds[GUILD]) config.guilds[GUILD] = {};
+    
+    if (req.body.autokick) {
+      config.guilds[GUILD].autokick = req.body.autokick;
+    }
+    
+    if (writeConfig(config)) {
+      res.json({ success: true });
+    } else {
+      res.status(500).json({ error: 'Failed to save config' });
+    }
+  } catch (err) {
+    console.error('Error updating autokick:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});

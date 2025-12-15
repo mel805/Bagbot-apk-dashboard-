@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Test Upload Musique</title>
+<style>
+body{background:#111;color:#fff;font-family:sans-serif;padding:40px;text-align:center}
+.upload-zone{border:3px dashed #5865F2;padding:60px;border-radius:12px;background:#222;margin:20px auto;max-width:600px}
+button{background:#5865F2;color:white;padding:20px 40px;font-size:18px;border:none;border-radius:8px;cursor:pointer;margin:10px}
+button:hover{background:#4752C4}
+#status{margin-top:20px;font-size:16px}
+.progress{background:#333;height:40px;border-radius:8px;margin:20px 0;overflow:hidden}
+.progress-bar{background:linear-gradient(90deg,#5865F2,#57F287);height:100%;width:0%;transition:width 0.3s}
+.file-list{background:#222;padding:20px;border-radius:8px;margin:20px auto;max-width:600px;text-align:left}
+</style>
+</head>
+<body>
+<h1>🎵 Test Upload Musique</h1>
+
+<div class="upload-zone">
+<p style="font-size:24px;margin-bottom:20px">📂 Upload de fichiers audio</p>
+<button onclick="document.getElementById('fileInput').click()">📁 CHOISIR UN FICHIER</button>
+<p style="color:#888;margin-top:20px">MP3, WAV, OGG, M4A, FLAC</p>
+<input type="file" id="fileInput" accept="audio/*" multiple style="display:none">
+</div>
+
+<div class="progress" id="progressBar" style="display:none">
+<div class="progress-bar" id="progress"></div>
+</div>
+
+<div id="status"></div>
+
+<div class="file-list" id="fileList"></div>
+
+<button onclick="location.href='/'">← Retour au Dashboard</button>
+
+<script>
+const fileInput = document.getElementById('fileInput');
+const status = document.getElementById('status');
+const progressBar = document.getElementById('progressBar');
+const progress = document.getElementById('progress');
+const fileList = document.getElementById('fileList');
+
+fileInput.addEventListener('change', async (e) => {
+  const files = e.target.files;
+  if (!files.length) return;
+  
+  for (let file of files) {
+    await uploadFile(file);
+  }
+  
+  loadFiles();
+});
+
+async function uploadFile(file) {
+  status.textContent = `Upload de ${file.name}...`;
+  progressBar.style.display = 'block';
+  progress.style.width = '0%';
+  
+  const formData = new FormData();
+  formData.append('audio', file);
+  
+  try {
+    const xhr = new XMLHttpRequest();
+    
+    xhr.upload.onprogress = (e) => {
+      if (e.lengthComputable) {
+        const percent = Math.round((e.loaded / e.total) * 100);
+        progress.style.width = percent + '%';
+      }
+    };
+    
+    xhr.onload = () => {
+      if (xhr.status === 200) {
+        status.textContent = `✅ ${file.name} uploadé avec succès !`;
+        status.style.color = '#57F287';
+      } else {
+        status.textContent = `❌ Erreur: ${xhr.responseText}`;
+        status.style.color = '#ED4245';
+      }
+      setTimeout(() => {
+        progressBar.style.display = 'none';
+        status.textContent = '';
+      }, 3000);
+    };
+    
+    xhr.onerror = () => {
+      status.textContent = `❌ Erreur réseau`;
+      status.style.color = '#ED4245';
+    };
+    
+    xhr.open('POST', '/api/music/upload');
+    xhr.send(formData);
+    
+    await new Promise(resolve => {
+      xhr.onloadend = resolve;
+    });
+    
+  } catch (error) {
+    status.textContent = `❌ Erreur: ${error.message}`;
+    status.style.color = '#ED4245';
+  }
+}
+
+async function loadFiles() {
+  try {
+    const response = await fetch('/api/music');
+    const data = await response.json();
+    
+    if (data.uploads && data.uploads.length > 0) {
+      fileList.innerHTML = '<h3>📦 Fichiers uploadés (' + data.uploads.length + ')</h3>';
+      data.uploads.forEach(file => {
+        const size = (file.size / 1024 / 1024).toFixed(2);
+        const displayName = file.filename.replace(/^\d+-/, ''); // Enlever le timestamp
+        fileList.innerHTML += `<div style="padding:10px;background:#1a1a1a;margin:5px 0;border-radius:8px">
+          🎵 ${displayName} <span style="color:#888;font-size:12px">(${size} MB)</span>
+          <button onclick="deleteFile('${file.filename}')" style="float:right;padding:5px 15px;font-size:14px;background:#ED4245">🗑️</button>
+        </div>`;
+      });
+    } else {
+      fileList.innerHTML = '<p style="color:#888">Aucun fichier uploadé</p>';
+    }
+  } catch (error) {
+    console.error('Erreur chargement:', error);
+  }
+}
+
+async function deleteFile(filename) {
+  if (!confirm('Supprimer ' + filename + ' ?')) return;
+  
+  try {
+    const response = await fetch('/api/music/upload/' + encodeURIComponent(filename), {
+      method: 'DELETE'
+    });
+    
+    if (response.ok) {
+      status.textContent = '✅ Supprimé';
+      status.style.color = '#57F287';
+      setTimeout(() => status.textContent = '', 2000);
+      loadFiles();
+    } else {
+      status.textContent = '❌ Erreur suppression';
+      status.style.color = '#ED4245';
+    }
+  } catch (error) {
+    status.textContent = '❌ ' + error.message;
+    status.style.color = '#ED4245';
+  }
+}
+
+// Charger les fichiers au démarrage
+loadFiles();
+</script>
+</body>
+</html>

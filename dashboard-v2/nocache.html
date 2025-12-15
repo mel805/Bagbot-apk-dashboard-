@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<script>
+// Force redirect avec timestamp pour bypass TOUT cache
+const ts = Date.now();
+window.location.replace('/dash?nocache=' + ts);
+</script>
+</head>
+<body style="background:#111;color:#fff;padding:50px;text-align:center">
+<h1>Redirection anti-cache...</h1>
+</body>
+</html>

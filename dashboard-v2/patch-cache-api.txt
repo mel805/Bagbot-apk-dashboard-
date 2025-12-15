@@ -1,0 +1,77 @@
+
+// POST - Mettre en cache un GIF Discord CDN
+app.post('/api/cache-gif-url', async (req, res) => {
+  const { url } = req.body;
+  if (!url) {
+    return res.status(400).json({ error: 'Missing url' });
+  }
+  
+  try {
+    const crypto = require('crypto');
+    const hash = crypto.createHash('md5').update(url).digest('hex');
+    const ext = url.includes('.gif') ? '.gif' : (url.includes('.png') ? '.png' : '.jpg');
+    const filename = hash + ext;
+    const cachePath = path.join(__dirname, 'gif-cache');
+    const filepath = path.join(cachePath, filename);
+    
+    // Vérifier si déjà en cache
+    if (fs.existsSync(filepath)) {
+      return res.json({ 
+        success: true, 
+        cached: true,
+        cacheUrl: "/gif-cache/" + filename,
+        filename 
+      });
+    }
+    
+    // Télécharger
+    await new Promise((resolve, reject) => {
+      const urlObj = new URL(url);
+      const protocol = urlObj.protocol === 'https:' ? https : require('http');
+      
+      const fileStream = fs.createWriteStream(filepath);
+      
+      protocol.get(url, {
+        headers: { 'User-Agent': 'Mozilla/5.0' },
+        timeout: 15000
+      }, (proxyRes) => {
+        if (proxyRes.statusCode !== 200) {
+          fileStream.close();
+          if (fs.existsSync(filepath)) fs.unlinkSync(filepath);
+          return reject(new Error("HTTP " + proxyRes.statusCode));
+        }
+        
+        proxyRes.pipe(fileStream);
+        fileStream.on('finish', () => {
+          fileStream.close();
+          resolve();
+        });
+      }).on('error', (err) => {
+        fileStream.close();
+        if (fs.existsSync(filepath)) fs.unlinkSync(filepath);
+        reject(err);
+      });
+    });
+    
+    // Mettre à jour le mapping
+    const mappingPath = path.join(cachePath, 'mapping.json');
+    let mapping = {};
+    if (fs.existsSync(mappingPath)) {
+      mapping = JSON.parse(fs.readFileSync(mappingPath, 'utf8'));
+    }
+    mapping[hash] = filename;
+    fs.writeFileSync(mappingPath, JSON.stringify(mapping, null, 2));
+    
+    console.log('✅ GIF mis en cache:', filename);
+    res.json({ 
+      success: true, 
+      cached: false,
+      cacheUrl: "/gif-cache/" + filename,
+      filename 
+    });
+  } catch (err) {
+    console.error('Erreur cache GIF:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+

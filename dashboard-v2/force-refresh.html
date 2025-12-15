@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>Force Refresh</title>
+<script>
+// Vider TOUS les caches
+if ('caches' in window) {
+  caches.keys().then(names => {
+    names.forEach(name => caches.delete(name));
+  });
+}
+
+// Forcer redirection avec timestamp
+setTimeout(() => {
+  const ts = Date.now();
+  window.location.replace('/dash?force=' + ts + '#nocache');
+}, 500);
+</script>
+</head>
+<body style="background:#111;color:#fff;padding:50px;text-align:center;font-family:sans-serif;">
+<h1>🔄 Nettoyage du cache...</h1>
+<p style="margin-top:20px;font-size:18px;">Redirection dans 0.5 secondes...</p>
+<p style="margin-top:30px;opacity:0.6;">Si rien ne se passe, <a href="/dash" style="color:#5865F2;">cliquez ici</a></p>
+</body>
+</html>

@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html><head><title>Dashboard V2</title>
+<script src="https://unpkg.com/vue@3"></script></head>
+<body style="background:#111;color:#fff;font-family:sans-serif;"><div id="app">
+<div style="display:flex;"><div style="width:200px;background:#222;padding:20px;">
+<h1 style="margin-bottom:20px;">BAG V2</h1>
+<button @click="v='p';load()" style="width:100%;padding:10px;margin-bottom:10px;background:#4a5;border:none;color:#fff;cursor:pointer;border-radius:5px;">Prompts</button>
+</div><div style="flex:1;padding:30px;"><div v-if="v=='p'"><h2 style="margin-bottom:20px;">Prompts A/V</h2>
+<select v-model="f" style="padding:10px;margin-bottom:20px;background:#333;color:#fff;border:none;border-radius:5px;">
+<option value="a-s">Action SFW</option><option value="a-n">Action NSFW</option>
+<option value="v-s">Vérité SFW</option><option value="v-n">Vérité NSFW</option>
+</select>
+<div style="background:#222;padding:20px;border-radius:10px;">
+<h3 style="margin-bottom:15px;">Prompts: {{filt.length}}</h3>
+<div v-for="p in filt" :key="p.id" style="background:#333;padding:10px;margin-bottom:10px;border-radius:5px;display:flex;gap:10px;">
+<div style="font-weight:bold;opacity:0.5;width:50px;">#{{p.id}}</div><div>{{p.text}}</div>
+</div></div></div></div></div></div>
+<script>
+const {createApp}=Vue;createApp({data(){return{v:'p',f:'a-s',d:{sfw:{prompts:[]},nsfw:{prompts:[]}}}},
+computed:{filt(){const[t,m]=this.f.split('-');const l=this.d[m==='s'?'sfw':'nsfw'].prompts||[];
+return l.filter(p=>(p.type||'').toLowerCase().replace('é','e')===(t==='a'?'action':'verite'));}},
+methods:{async load(){const r=await fetch('http://82.67.65.98:3002/api/config/truthdare');this.d=await r.json();}},
+mounted(){this.load();}}).mount('#app');
+</script></body></html>

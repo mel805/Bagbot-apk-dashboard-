@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>TEST NOCACHE - <?php echo time(); ?></title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:sans-serif;background:#111;color:#fff;overflow-x:hidden;width:100%}
+.sidebar{width:240px;height:100vh;position:fixed;background:#1a1a1a;padding:20px;overflow-y:auto;z-index:1000;left:0;top:0}
+.main{margin-left:260px!important;padding:30px;padding-right:50px;width:calc(100% - 260px)!important;box-sizing:border-box!important;overflow-x:hidden!important;position:relative;min-width:0}
+.card{background:#222;padding:20px;border-radius:12px;margin-bottom:20px;width:100%!important;max-width:100%!important;box-sizing:border-box!important;position:relative;overflow:hidden}
+.test-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;max-width:100%;overflow:hidden}
+.test-item{padding:20px;background:#ED4245;border-radius:8px;text-align:center;font-weight:bold}
+[v-show]{max-width:100%!important;box-sizing:border-box!important}
+div[style*="grid-template-columns"]{max-width:100%!important;overflow:hidden!important}
+h2{font-size:clamp(16px,4vw,28px)!important}
+</style>
+</head>
+<body>
+<div class="sidebar">
+<h1 style="font-size:20px;margin-bottom:20px;">🤖 TEST</h1>
+<div style="padding:12px;background:#ED4245;border-radius:8px;margin-bottom:10px;">Test Sidebar</div>
+</div>
+
+<div class="main">
+<h1>TEST CORRECTIONS CSS - <?php echo date('H:i:s'); ?></h1>
+<p style="margin:20px 0;font-size:18px;">Si vous voyez cette page, c'est que le serveur fonctionne.</p>
+<p style="margin:20px 0;font-size:14px;opacity:0.7;">Timestamp: <?php echo time(); ?> - Ceci devrait changer à chaque rechargement</p>
+
+<div class="card">
+<h2>Section Test AutoThread</h2>
+<p style="margin:10px 0;">Cette section devrait s'afficher correctement sans déborder.</p>
+</div>
+
+<div class="card">
+<h2>Section Test Disboard</h2>
+<p style="margin:10px 0;">Le texte ne devrait PAS passer derrière la barre latérale.</p>
+</div>
+
+<div class="card">
+<h2>Section Test Géo</h2>
+<p style="margin:10px 0;">Tout devrait être contenu dans la zone principale.</p>
+</div>
+
+<div class="card">
+<h2>Section Test Actions (Grille)</h2>
+<div class="test-grid">
+<div class="test-item">Item 1</div>
+<div class="test-item">Item 2</div>
+<div class="test-item">Item 3</div>
+<div class="test-item">Item 4</div>
+<div class="test-item">Item 5</div>
+<div class="test-item">Item 6</div>
+</div>
+</div>
+
+<div class="card">
+<h2>Section Test Backups</h2>
+<p style="margin:10px 0;">Les cartes devraient être responsive.</p>
+</div>
+
+<div class="card" style="background:#57F287;color:#000;padding:30px;text-align:center;">
+<h2 style="color:#000;">✅ SI VOUS VOYEZ CETTE ZONE VERTE</h2>
+<p style="font-size:18px;margin-top:10px;">Les corrections CSS fonctionnent !</p>
+<p style="margin-top:20px;font-size:14px;">Maintenant testez en réduisant la largeur de votre fenêtre.</p>
+</div>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,366 @@
+═══════════════════════════════════════════════════════════════════════════════
+                    🎯 GUIDE VISUEL DE MIGRATION - ÉTAPE PAR ÉTAPE
+═══════════════════════════════════════════════════════════════════════════════
+
+📋 ORDRE DE MIGRATION RECOMMANDÉ
+
+┌──────────┬────────────────────────────────────────────────┬──────────┐
+│ PRIORITÉ │ ACTION                                         │ DURÉE    │
+├──────────┼────────────────────────────────────────────────┼──────────┤
+│    1     │ Créer Forum "Partage-Photos"                   │ 10 min   │
+│    2     │ Créer Forum "Contenu-NSFW"                     │ 15 min   │
+│    3     │ Tester les forums avec modération              │ 1-2 jours│
+│    4     │ Créer salon "Médias-Et-Mêmes"                  │ 5 min    │
+│    5     │ Créer salon "Commandes-Bot"                    │ 5 min    │
+│    6     │ Créer salon "Toys-et-Fantasme"                 │ 5 min    │
+│    7     │ Annoncer la migration aux membres              │ 7 jours  │
+│    8     │ Archiver anciens salons (pas supprimer)        │ 30 min   │
+│    9     │ Observer utilisation pendant 14 jours          │ 2 semaines│
+│   10     │ Supprimer définitivement si OK                 │ 15 min   │
+└──────────┴────────────────────────────────────────────────┴──────────┘
+
+═══════════════════════════════════════════════════════════════════════════════
+
+📸 FORUM "PARTAGE-PHOTOS" - CONFIGURATION DÉTAILLÉE
+
+🔧 Paramètres du Forum:
+   • Nom: 『📸』・⟡・𝑷𝒂𝒓𝒕𝒂𝒈𝒆-𝑷𝒉𝒐𝒕𝒐𝒔・⟡
+   • Type: Forum Channel
+   • Catégorie: 「⟡・𝐏𝐀𝐑𝐓𝐀𝐆𝐄 𝐏𝐇𝐎𝐓𝐎𝐒・⟡」 (nouvelle)
+   • Mode posts: Galerie (images en avant)
+   • Tri par défaut: Activité récente
+   • Réactions obligatoires: Non
+   
+📌 Tags à créer (8 tags):
+   
+   1. 🤳 Selfie
+      • Couleur: Bleu clair
+      • Description: "Vos plus beaux selfies"
+      
+   2. 👗 Outfit
+      • Couleur: Rose
+      • Description: "Partagez vos tenues du jour"
+      
+   3. 💃 Tease-Femme
+      • Couleur: Rouge
+      • Description: "Contenu suggestif féminin (18+)"
+      • Restriction: Rôle NSFW requis
+      
+   4. 🕺 Tease-Homme
+      • Couleur: Bleu foncé
+      • Description: "Contenu suggestif masculin (18+)"
+      • Restriction: Rôle NSFW requis
+      
+   5. 🌈 Tease-Autre
+      • Couleur: Arc-en-ciel
+      • Description: "Contenu suggestif autre genre (18+)"
+      • Restriction: Rôle NSFW requis
+      
+   6. 💄 Nudes-Femme
+      • Couleur: Rouge foncé
+      • Description: "Contenu explicite féminin (18+)"
+      • Restriction: Rôle NSFW requis
+      
+   7. 👔 Nudes-Homme
+      • Couleur: Noir
+      • Description: "Contenu explicite masculin (18+)"
+      • Restriction: Rôle NSFW requis
+      
+   8. 🧢 Nudes-Autre
+      • Couleur: Violet
+      • Description: "Contenu explicite autre genre (18+)"
+      • Restriction: Rôle NSFW requis
+
+🔒 Permissions:
+   • @everyone: Voir + Créer posts + Réagir + Commenter
+   • Rôle NSFW: Accès aux tags 18+
+   • Modération: Toutes permissions
+   
+📝 Message d'accueil (pinned):
+   """
+   📸 **Bienvenue sur le Forum Partage Photos !**
+   
+   Choisissez un tag pour créer votre post :
+   
+   **SFW (Tous publics):**
+   🤳 **Selfie** - Vos plus beaux selfies
+   👗 **Outfit** - Vos tenues du jour
+   
+   **NSFW (18+ uniquement - rôle requis):**
+   💃🕺🌈 **Tease** - Contenu suggestif
+   💄👔🧢 **Nudes** - Contenu explicite
+   
+   ⚠️ **Règles:**
+   • Un post = une photo/série
+   • Respectez les limites de chacun
+   • Pas de spam
+   • Contenu NSFW = tag approprié obligatoire
+   """
+
+═══════════════════════════════════════════════════════════════════════════════
+
+🔞 FORUM "CONTENU-NSFW" - CONFIGURATION DÉTAILLÉE
+
+🔧 Paramètres du Forum:
+   • Nom: 『🔞』・⟡・𝑪𝒐𝒏𝒕𝒆𝒏𝒖-𝑵𝑺𝐅𝑾・⟡
+   • Type: Forum Channel
+   • Catégorie: 「⟡・𝐂𝐎𝐍𝐓𝐄𝐍𝐔 𝐍𝐒𝐅𝐖・⟡」 (nouvelle)
+   • NSFW: ✅ OUI (OBLIGATOIRE)
+   • Mode posts: Standard
+   • Tri par défaut: Activité récente
+   • Slow mode: 30 secondes
+   
+📌 Tags à créer (24 tags):
+   
+   ROW 1:
+   💙 Amateur     | 🏯 Asian       | 🍑 Ass         | 🪢 BDSM
+   
+   ROW 2:
+   🥱 Blowjobs   | 🍒 Boobs       | 👗 Exhib       | 🥛 Creampie
+   
+   ROW 3:
+   🍆 Dick       | 😮 Face-Fuck   | 🦶 Feet        | 🥒 Femboy
+   
+   ROW 4:
+   🫣 Fuck       | ✋ Handjob     | 🩸 Hard        | 🩱 Latex
+   
+   ROW 5:
+   👅 Milfs      | 🌳 Public      | 🐱 Pussy       | 🪄 Vanilla
+   
+   ROW 6:
+   🧸 Toys       | 🦋 Trans       | 🫦 Lick        | 🤖 IA
+
+🎨 Couleurs des tags (par intensité):
+   • Soft (Amateur, Asian, Boobs, etc.): Bleu/Rose clair
+   • Medium (Exhib, Public, Vanilla): Orange/Jaune
+   • Hard (BDSM, Hard, Fuck): Rouge foncé
+   • Spécifique (Trans, Femboy, IA): Violet/Vert
+
+🔒 Permissions:
+   • @everyone: ❌ Pas d'accès
+   • Rôle NSFW: ✅ Voir + Créer posts + Réagir + Commenter
+   • Modération: Toutes permissions
+   
+📝 Message d'accueil (pinned):
+   """
+   🔞 **Forum Contenu NSFW - 18+ UNIQUEMENT**
+   
+   **24 catégories disponibles via les tags:**
+   
+   Sélectionnez un ou plusieurs tags pour créer votre post.
+   
+   ⚠️ **RÈGLES STRICTES:**
+   • Contenu légal uniquement
+   • Respect du consentement
+   • Pas de contenu impliquant des mineurs
+   • Pas de spam
+   • Tag approprié = OBLIGATOIRE
+   
+   ℹ️ **Comment utiliser:**
+   1. Cliquez sur "Nouveau post"
+   2. Choisissez un tag (ou plusieurs)
+   3. Titre clair + contenu
+   4. Postez !
+   
+   Les modérateurs peuvent déplacer les posts mal tagués.
+   """
+
+═══════════════════════════════════════════════════════════════════════════════
+
+📺 NOUVEAU SALON "MÉDIAS-ET-MÊMES"
+
+🔧 Configuration:
+   • Nom: 『📺』・⟡・𝑴é𝒅𝒊𝒂𝒔-𝑬𝒕-𝑴ê𝒎𝒆𝒔・⟡
+   • Type: Salon texte
+   • Catégorie: 「⟡・𝐆É𝐍É𝐑𝐀𝐋・⟡」
+   • Slow mode: 5 secondes
+   
+🔀 Remplace:
+   ❌ 『🎶』MédiaMusiqueÉdivers (GÉNÉRAL)
+   ❌ 『😂』Mème (GÉNÉRAL)
+   ❌ 🎥 Média (MONDE DE LA NUIT)
+   
+📝 Message d'accueil:
+   """
+   📺 **Médias & Mêmes - Tout votre contenu fun !**
+   
+   Partagez ici:
+   🎵 Musique et clips
+   🎬 Vidéos et films
+   😂 Mêmes et gifs
+   📺 Contenu divers
+   
+   ⚠️ Contenu NSFW accepté (bien taguer spoiler si explicite)
+   """
+
+═══════════════════════════════════════════════════════════════════════════════
+
+🤖 NOUVEAU SALON "COMMANDES-BOT"
+
+🔧 Configuration:
+   • Nom: 『🤖』・⟡・𝑪𝒐𝒎𝒎𝒂𝒏𝒅𝒆𝒔-𝑩𝒐𝒕・⟡
+   • Type: Salon texte
+   • Catégorie: 「⟡・𝐋𝐀 𝐂𝐎𝐌𝐌𝐔・⟡」
+   • Slow mode: 3 secondes
+   
+🔀 Remplace:
+   ❌ 🛒 Boutique (LA COMMU)
+   ❌ 🌍 Qui-est-où (LA COMMU)
+   ❌ 🎮 Jeux-Bot (SALLE DE JEUX)
+   ❌ 🎴 Mudae (SALLE DE JEUX)
+   
+📝 Message d'accueil:
+   """
+   🤖 **Commandes Bot - Votre espace interactif !**
+   
+   Utilisez toutes les commandes du bot ici :
+   
+   🛒 **Économie & Boutique**
+   • /boutique - Voir la boutique
+   • /argent - Voir votre argent
+   • /acheter - Acheter un article
+   
+   🌍 **Localisation**
+   • /proche - Qui est près de vous
+   • /map - Carte des membres
+   
+   🎮 **Jeux**
+   • Mudae (/roll, /marry, etc.)
+   • Autres commandes de jeux
+   
+   📊 **Statistiques**
+   • /niveaux - Voir le classement
+   • /profil - Votre profil
+   """
+
+═══════════════════════════════════════════════════════════════════════════════
+
+🧸 NOUVEAU SALON "TOYS-ET-FANTASME"
+
+🔧 Configuration:
+   • Nom: 🧸・⟡・𝑽𝒐𝒔-𝑻𝒐𝒚𝒔-𝒆𝒕-𝑭𝒂𝒏𝒕𝒂𝒔𝒎𝒆・⟡
+   • Type: Salon texte
+   • Catégorie: 「⟡・𝐋𝐄 𝐌𝐎𝐍𝐃𝐄 𝐃𝐄 𝐋𝐀 𝐍𝐔𝐈𝐓・⟡」
+   • NSFW: ✅ OUI
+   • Slow mode: 10 secondes
+   
+🔀 Remplace:
+   ❌ 🧸 Vos-Toys (MONDE DE LA NUIT)
+   ❌ 💭 Fantasme (MONDE DE LA NUIT)
+   
+🔒 Permissions:
+   • Rôle NSFW: Voir + Écrire
+   
+📝 Message d'accueil:
+   """
+   🧸💭 **Toys & Fantasmes - Partagez vos secrets !**
+   
+   🧸 **Toys:**
+   • Partagez vos collections
+   • Conseils et recommandations
+   • Photos (spoiler si explicite)
+   
+   💭 **Fantasmes:**
+   • Discussions sur vos fantasmes
+   • Kinks et préférences
+   • Respect et consentement
+   
+   ⚠️ **Règles:**
+   • Respect absolu
+   • Pas de jugement
+   • Contenu légal uniquement
+   """
+
+═══════════════════════════════════════════════════════════════════════════════
+
+📋 CHECKLIST AVANT SUPPRESSION
+
+Avant de supprimer définitivement les anciens salons, vérifier:
+
+▢ Les nouveaux forums sont créés avec tous les tags
+▢ Les permissions sont correctes (NSFW, etc.)
+▢ Les messages d'accueil sont postés et pinnés
+▢ Les membres ont été prévenus 7 jours à l'avance
+▢ Aucun contenu important n'a été perdu
+▢ Les membres utilisent activement les nouveaux espaces
+▢ Aucune plainte ou confusion majeure
+▢ Export/backup des anciens salons effectué
+▢ Test complet par l'équipe de modération
+▢ Validation finale du propriétaire
+
+═══════════════════════════════════════════════════════════════════════════════
+
+💾 PLAN DE SAUVEGARDE
+
+Avant toute modification:
+
+1. Export Discord (natif):
+   • Paramètres serveur → Sécurité → Export des données
+   • Conserve tous les messages et médias
+   
+2. Screenshots:
+   • Capturer la structure actuelle
+   • Liste complète des salons
+   • Permissions de chaque catégorie
+   
+3. Documentation:
+   • Noter tous les bots et leurs configurations
+   • Lister les webhooks actifs
+   • Documenter les rôles et permissions
+   
+4. Archive manuelle:
+   • Utiliser DiscordChatExporter pour les salons importants
+   • Sauvegarder localement
+
+═══════════════════════════════════════════════════════════════════════════════
+
+📢 MESSAGE D'ANNONCE SUGGÉRÉ (à poster 7 jours avant)
+
+"""
+🎉 **GROSSE MISE À JOUR DU SERVEUR - 7 JOURS !**
+
+Salut @everyone !
+
+Dans **7 jours**, le serveur va subir une refonte pour améliorer votre expérience.
+
+**🎯 OBJECTIF:** Rendre le serveur plus clair, plus fluide, moins fragmenté.
+
+**✨ NOUVEAUTÉS:**
+
+📸 **Nouveau Forum "Partage Photos"**
+• Tease, Nudes, Selfies, Outfit → Tout en un seul endroit avec tags
+• Plus simple, plus organisé !
+
+🔞 **Nouveau Forum "Contenu NSFW"**  
+• Les 24 salons NSFW deviennent un seul forum avec 24 tags
+• Recherche plus facile, moins de scroll !
+
+🤖 **Nouveau Salon "Commandes-Bot"**
+• Boutique + Localisation + Jeux bot → Un seul salon
+• Toutes vos commandes au même endroit !
+
+📺 **Nouveau Salon "Médias & Mêmes"**
+• Musique + Vidéos + Mêmes → Fusionnés
+• Plus d'interaction, moins de dispersion !
+
+**❌ SUPPRESSIONS:**
+• Catégorie RP/ERP (peu utilisée)
+• Doublons (mot-à-mot x2, etc.)
+• Salons peu actifs (gémissements, défis-nsfw, etc.)
+
+**📊 RÉSULTAT:**
+• 209 salons → 153 salons (-27%)
+• Navigation plus rapide
+• Structure plus claire
+
+**❓ QUESTIONS?**
+Posez-les dans ce salon, on répond à tout !
+
+**📅 DATE:** Le [DATE EXACTE] à [HEURE]
+
+Merci de votre compréhension ! 💙
+
+— L'équipe de modération
+"""
+
+═══════════════════════════════════════════════════════════════════════════════
