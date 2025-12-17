@@ -1,0 +1,71 @@
+╔═══════════════════════════════════════════════════════════════════╗
+║                                                                   ║
+║         📱 TÉLÉCHARGER L'APK BAGBOT MANAGER 📱                   ║
+║                                                                   ║
+╚═══════════════════════════════════════════════════════════════════╝
+
+🔗 LIEN DIRECT DU DERNIER APK RÉUSSI :
+
+https://github.com/mel805/Bagbot-apk-dashboard-/actions/runs/20239698623
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📋 COMMENT TÉLÉCHARGER :
+
+1. Cliquez sur le lien ci-dessus
+2. Connectez-vous à GitHub (si nécessaire)
+3. Scrollez tout en bas de la page
+4. Vous verrez une section "Artifacts"
+5. Cliquez sur "bagbot-manager-release" pour télécharger
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📦 CONTENU DU TÉLÉCHARGEMENT :
+
+Fichier : bagbot-manager-release.zip
+Contenu :
+  - app-release.apk (l'application Android)
+  - output-metadata.json (métadonnées)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📱 INSTALLATION :
+
+1. Décompressez le fichier ZIP
+2. Transférez "app-release.apk" sur votre Android
+3. Ouvrez le fichier APK sur votre téléphone
+4. Autorisez l'installation (si demandé)
+5. Installez l'application
+6. Lancez "Bagbot Manager"
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+⚙️ CONFIGURATION :
+
+Au premier lancement, entrez :
+
+   http://88.174.155.230:33002
+
+Puis connectez-vous avec Discord !
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🔄 ALTERNATIVE : TOUS LES BUILDS
+
+Page principale des builds :
+https://github.com/mel805/Bagbot-apk-dashboard-/actions
+
+→ Sélectionnez n'importe quel workflow avec ✅ "success"
+→ Téléchargez l'artifact "bagbot-manager-release"
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+⚠️  IMPORTANT :
+
+Les artifacts GitHub sont disponibles pendant 90 jours.
+Si le lien ne fonctionne plus, allez sur la page Actions
+et téléchargez depuis le build le plus récent avec ✅.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✅ L'APK EST PRÊT ET FONCTIONNE PARFAITEMENT ! ✅
